@@ -51,7 +51,7 @@ export const MyDownloadsPage: React.FC = () => {
     if (!clean) return;
     setDownloadError(null);
     const results = getOrdersByEmail(clean).filter(
-      (o) => o.status === 'paid' && Boolean(o.downloadToken)
+      (o) => o.status === 'paid' && Boolean(o.downloadToken) && Boolean(o.webhookVerified)
     );
     setSearchedOrders(results);
     setHasSearched(true);
@@ -64,7 +64,7 @@ export const MyDownloadsPage: React.FC = () => {
 
   const handleDownload = async (ord: Order, productId: string, title: string) => {
     setDownloadError(null);
-    if (ord.status !== 'paid' || !ord.downloadToken) {
+    if (ord.status !== 'paid' || !ord.downloadToken || !ord.webhookVerified) {
       setDownloadError('⚠️ Access Denied: Printable PDFs can only be downloaded after verified Razorpay webhook confirmation.');
       return;
     }

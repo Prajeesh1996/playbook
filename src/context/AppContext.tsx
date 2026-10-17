@@ -206,8 +206,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...orderData,
       id: orderData.id || `ord_${Date.now()}`,
       orderNumber,
-      downloadToken,
-      tokenExpiresAt,
+      downloadToken: '', // strictly empty on creation; only issued when server confirms payment!
+      tokenExpiresAt: '',
+      webhookVerified: false,
       createdAt: new Date().toISOString(),
     };
 
@@ -221,6 +222,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     verifiedDownloadToken?: string,
     webhookVerified: boolean = true
   ): Order | null => {
+    if (!verifiedDownloadToken || !verifiedDownloadToken.trim()) {
+      console.error('Security denial: Cannot mark order as paid without an authentic server-issued downloadToken.');
+      return null;
+    }
     let updatedOrder: Order | null = null;
     setOrders((prev) =>
       prev.map((ord) => {
@@ -228,10 +233,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           updatedOrder = {
             ...ord,
             status: 'paid',
-            webhookVerified,
+            webhookVerified: Boolean(webhookVerified),
             verifiedAt: new Date().toISOString(),
             razorpayPaymentId,
-            downloadToken: verifiedDownloadToken || ord.downloadToken,
+            downloadToken: verifiedDownloadToken,
+            tokenExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           };
           return updatedOrder;
         }

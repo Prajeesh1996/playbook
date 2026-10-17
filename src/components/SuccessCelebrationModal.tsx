@@ -22,15 +22,15 @@ export const SuccessCelebrationModal: React.FC<SuccessCelebrationModalProps> = (
 
   if (!order) return null;
 
-  // STRICT PAYMENT GATE: Only allow download if status is 'paid', webhook is verified, and server downloadToken exists
+  // STRICT PAYMENT GATE: Only allow download if status is 'paid', webhook is strictly verified, and server downloadToken exists
   const isPaymentConfirmed = Boolean(
-    order.status === 'paid' && order.downloadToken && (order.webhookVerified || Boolean(order.razorpayPaymentId))
+    order.status === 'paid' && order.webhookVerified === true && order.downloadToken && Boolean(order.razorpayPaymentId)
   );
 
   const handleDownloadItem = async (productId: string, title: string) => {
     setDownloadError(null);
-    if (!order.downloadToken) {
-      setDownloadError('⚠️ Access Denied: Missing server-verified download token. PDFs are strictly unlocked via Razorpay webhook confirmation.');
+    if (!order.downloadToken || !order.webhookVerified || order.status !== 'paid') {
+      setDownloadError('⚠️ Access Denied: Missing server-verified download token. PDFs are strictly unlocked via verified Razorpay webhook confirmation.');
       return;
     }
 

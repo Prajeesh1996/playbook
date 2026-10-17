@@ -12,7 +12,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 
 // ZERO DATABASE ARCHITECTURE:
 // Completely standalone in-memory store for orders and sessions.
@@ -106,7 +112,6 @@ app.post('/api/orders/create', async (req: Request, res: Response) => {
 
     const orderId = `ord_${Date.now()}`;
     const orderNumber = `LCW-${Math.floor(10000 + Math.random() * 90000)}`;
-    const downloadToken = `tok_${crypto.randomBytes(16).toString('hex')}`;
     const tokenExpiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
 
     // Check if live Razorpay credentials exist
@@ -149,7 +154,7 @@ app.post('/api/orders/create', async (req: Request, res: Response) => {
       razorpayOrderId,
       status: 'pending',
       webhookVerified: false,
-      downloadToken,
+      downloadToken: '', // STRICT SECURITY: Tokens are strictly issued ONLY after verified payment confirmation!
       tokenExpiresAt,
       items: verifiedItems,
       createdAt: new Date().toISOString(),
@@ -166,7 +171,6 @@ app.post('/api/orders/create', async (req: Request, res: Response) => {
         razorpayOrderId,
         amountPaise: finalAmountPaise,
         currency: 'INR',
-        downloadToken,
         razorpayKeyId: razorpayKeyId || process.env.VITE_RAZORPAY_KEY_ID || '',
       },
     });
@@ -273,46 +277,57 @@ app.post('/api/orders/verify', async (req: Request, res: Response) => {
         order.status = 'failed';
         return res.status(400).json({ error: 'Invalid payment signature. Server rejected verification.' });
       }
-    }
 
-    // Check if live Razorpay credentials are present to confirm payment status directly with Razorpay API
-    const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
-    if (razorpayKeyId && razorpaySecret && !razorpayPaymentId.startsWith('pay_sim_')) {
-      try {
-        const auth = Buffer.from(`${razorpayKeyId}:${razorpaySecret}`).toString('base64');
-        const paymentCheck = await fetch(`https://api.razorpay.com/v1/payments/${razorpayPaymentId}`, {
-          headers: { Authorization: `Basic ${auth}` },
-        });
-        if (paymentCheck.ok) {
-          const paymentData = (await paymentCheck.json()) as any;
-          if (paymentData.status !== 'captured' && paymentData.status !== 'authorized') {
-            return res.status(400).json({
-              error: `Payment is not confirmed on Razorpay (status: ${paymentData.status}). PDF access denied.`,
-            });
+      // Check if live Razorpay credentials are present to confirm payment status directly with Razorpay API
+      const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
+      if (razorpayKeyId && !razorpayPaymentId.startsWith('pay_sim_')) {
+        try {
+          const auth = Buffer.from(`${razorpayKeyId}:${razorpaySecret}`).toString('base64');
+          const paymentCheck = await fetch(`https://api.razorpay.com/v1/payments/${razorpayPaymentId}`, {
+            headers: { Authorization: `Basic ${auth}` },
+          });
+          if (paymentCheck.ok) {
+            const paymentData = (await paymentCheck.json()) as any;
+            if (paymentData.status !== 'captured' && paymentData.status !== 'authorized') {
+              return res.status(400).json({
+                error: `Payment is not confirmed on Razorpay (status: ${paymentData.status}). PDF access denied.`,
+              });
+            }
           }
+        } catch (checkErr) {
+          console.warn('Razorpay API verification error:', checkErr);
         }
-      } catch (checkErr) {
-        console.warn('Razorpay API verification error:', checkErr);
       }
+
+      // Verified via Razorpay signature and/or API
+      order.status = 'paid';
+      order.webhookVerified = true;
+      order.verifiedAt = new Date().toISOString();
+      order.razorpayPaymentId = razorpayPaymentId;
+      order.downloadToken = order.downloadToken || `tok_whk_${crypto.randomBytes(24).toString('hex')}`;
+      order.tokenExpiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
+      order.updatedAt = new Date().toISOString();
+
+      return res.json({
+        success: true,
+        verified: true,
+        webhookVerified: true,
+        message: 'Payment verified successfully by server. Printable PDF access granted.',
+        downloadToken: order.downloadToken,
+        orderNumber: order.orderNumber,
+        razorpayPaymentId: order.razorpayPaymentId,
+        expiresAt: order.tokenExpiresAt,
+      });
     }
 
-    // Mark paid with verified payment ID on server
-    order.status = 'paid';
-    order.webhookVerified = true;
-    order.verifiedAt = new Date().toISOString();
-    order.razorpayPaymentId = razorpayPaymentId;
-    order.downloadToken = order.downloadToken || `tok_whk_${crypto.randomBytes(24).toString('hex')}`;
-    order.updatedAt = new Date().toISOString();
-
-    res.json({
-      success: true,
-      verified: true,
-      webhookVerified: true,
-      message: 'Payment verified successfully by server. Printable PDF access granted.',
-      downloadToken: order.downloadToken,
-      orderNumber: order.orderNumber,
-      razorpayPaymentId: order.razorpayPaymentId,
-      expiresAt: order.tokenExpiresAt,
+    // STRICT ANTI-BYPASS: Without server Razorpay secret, client claims cannot mark orders paid.
+    // The server requires the authoritative webhook event or developer simulation.
+    return res.status(202).json({
+      success: false,
+      verified: false,
+      webhookVerified: false,
+      pendingWebhook: true,
+      message: 'Awaiting server-side Razorpay webhook confirmation before download access can be granted.',
     });
   } catch (err) {
     res.status(500).json({ error: 'Server payment verification error.' });
@@ -454,9 +469,13 @@ app.post('/api/razorpay/webhook', (req: Request, res: Response) => {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   const signature = req.headers['x-razorpay-signature'] as string;
 
-  if (secret && signature) {
+  if (secret) {
+    if (!signature) {
+      return res.status(401).json({ error: 'Missing webhook signature header (x-razorpay-signature).' });
+    }
     const shasum = crypto.createHmac('sha256', secret);
-    shasum.update(JSON.stringify(req.body));
+    const bodyContent = (req as any).rawBody || JSON.stringify(req.body);
+    shasum.update(bodyContent);
     const digest = shasum.digest('hex');
     if (digest !== signature) {
       return res.status(400).json({ error: 'Invalid webhook signature.' });
@@ -475,6 +494,8 @@ app.post('/api/razorpay/webhook', (req: Request, res: Response) => {
         ord.webhookVerified = true;
         ord.verifiedAt = new Date().toISOString();
         ord.razorpayPaymentId = paymentId;
+        ord.downloadToken = ord.downloadToken || `tok_whk_${crypto.randomBytes(24).toString('hex')}`;
+        ord.tokenExpiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
         ord.updatedAt = new Date().toISOString();
         console.log(`[Webhook] Order ${ord.orderNumber} successfully marked PAID via Razorpay webhook (${paymentId})`);
         break;

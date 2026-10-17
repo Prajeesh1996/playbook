@@ -32,8 +32,8 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
 
   const handleDownloadItem = async (ord: Order, productId: string, title: string) => {
     setDownloadError(null);
-    // STRICT PAYMENT CHECK: Refuse download if order is not paid or missing download token
-    if (ord.status !== 'paid' || !ord.downloadToken) {
+    // STRICT PAYMENT CHECK: Refuse download if order is not paid, unverified, or missing download token
+    if (ord.status !== 'paid' || !ord.downloadToken || !ord.webhookVerified) {
       setDownloadError('⚠️ Access Denied: Printable PDFs can only be downloaded after verified Razorpay webhook confirmation.');
       return;
     }

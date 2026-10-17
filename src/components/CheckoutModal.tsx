@@ -155,15 +155,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         } else if (verifyData.error) {
           throw new Error(verifyData.error);
         }
+      } else if (verifyRes.status === 202) {
+        // Server is waiting for authoritative server-side Razorpay webhook delivery
+        console.log('Awaiting server-side Razorpay webhook confirmation...');
       } else {
         const errJson = await verifyRes.json().catch(() => null);
         throw new Error(errJson?.error || 'Server rejected payment verification.');
       }
 
-      // If webhook has a slight delivery latency, poll server status endpoint
+      // If webhook has delivery latency, poll server status endpoint
       if (!serverVerified) {
-        for (let attempt = 0; attempt < 4; attempt++) {
-          await new Promise((res) => setTimeout(res, 1000));
+        for (let attempt = 0; attempt < 6; attempt++) {
+          await new Promise((res) => setTimeout(res, 1200));
           const statusRes = await fetch(`/api/orders/status/${localOrder.id}`);
           if (statusRes.ok) {
             const statusData = await statusRes.json();
@@ -187,6 +190,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       // 2. Mark order as verified and paid locally ONLY with verified server download token
       const confirmedOrder = markOrderPaid(localOrder.id, razorpayPaymentId, verifiedDownloadToken, true);
 
+      if (!confirmedOrder) {
+        throw new Error('Verification failure: Could not record confirmed order state with server download token.');
+      }
+
       // Trigger celebration confetti
       try {
         confetti({
@@ -208,16 +215,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setShowSimulatorModal(null);
 
       // 3. ONLY now share the PDF by calling onSuccess with the confirmed order
-      onSuccess(
-        confirmedOrder || {
-          ...localOrder,
-          status: 'paid',
-          webhookVerified: true,
-          orderNumber: serverOrderNumber,
-          razorpayPaymentId,
-          downloadToken: verifiedDownloadToken,
-        }
-      );
+      onSuccess(confirmedOrder);
     } catch (err: any) {
       console.error('Payment confirmation error:', err);
       setIsProcessing(false);
@@ -264,8 +262,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         console.warn('Could not reach backend order creator, using local pending record', backendErr);
       }
 
-      // Step 2: Register local pending order
+      // Step 2: Register local pending order synchronized with backend
       const newOrder = createOrder({
+        id: backendOrder?.id,
+        orderNumber: backendOrder?.orderNumber,
         customer: {
           parentName: parentName.trim(),
           email: email.trim().toLowerCase(),
