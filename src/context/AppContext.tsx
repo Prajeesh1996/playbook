@@ -28,8 +28,8 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const PRODUCTS_KEY = 'lcw_products_v1';
-const ORDERS_KEY = 'lcw_orders_v1';
+const PRODUCTS_KEY = 'lcw_products_v3';
+const ORDERS_KEY = 'lcw_orders_v3';
 const ENQUIRIES_KEY = 'lcw_enquiries_v1';
 const MESSAGES_KEY = 'lcw_messages_v1';
 const ADMIN_AUTH_KEY = 'lcw_admin_auth';
@@ -64,20 +64,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             {
               productId: 'prod-1',
               title: 'Animal Colouring Book',
-              price: 29,
-              originalPrice: 99,
+              price: 49,
+              originalPrice: 129,
             },
             {
               productId: 'prod-2',
               title: 'My First ABC Colouring Book',
-              price: 39,
-              originalPrice: 129,
+              price: 59,
+              originalPrice: 149,
             },
           ],
-          subtotal: 68,
-          discount: 10,
+          subtotal: 108,
+          discount: 15,
           couponCode: 'LITTLE10',
-          total: 58,
+          total: 93,
           razorpayOrderId: 'order_test_928374291',
           razorpayPaymentId: 'pay_test_8839201948',
           status: 'paid',

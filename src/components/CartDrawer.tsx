@@ -78,7 +78,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onProceedToCheckout }) =
                 Your backpack is empty!
               </h3>
               <p className="text-xs text-neutral-600 font-medium max-w-xs mx-auto">
-                Explore our preschool colouring books and worksheets starting at just ₹29!
+                Explore our preschool colouring books and worksheets starting at just ₹49!
               </p>
               <button
                 onClick={() => setIsCartDrawerOpen(false)}

@@ -24,7 +24,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = 'little_colour_world_cart';
+const CART_STORAGE_KEY = 'little_colour_world_cart_v2';
 const COUPON_STORAGE_KEY = 'little_colour_world_coupon';
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

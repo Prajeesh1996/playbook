@@ -74,8 +74,8 @@ CREATE TABLE `products` (
   `page_count` INT NOT NULL DEFAULT 30,
   `file_format` VARCHAR(50) NOT NULL DEFAULT 'Printable PDF (A4)',
   `file_size_mb` DECIMAL(6,2) NOT NULL DEFAULT 5.00,
-  `original_price_paise` INT UNSIGNED NOT NULL DEFAULT 9900,   -- ₹99.00
-  `selling_price_paise` INT UNSIGNED NOT NULL DEFAULT 2900,    -- ₹29.00
+  `original_price_paise` INT UNSIGNED NOT NULL DEFAULT 12900,  -- ₹129.00
+  `selling_price_paise` INT UNSIGNED NOT NULL DEFAULT 4900,   -- ₹49.00
   `is_featured` TINYINT(1) NOT NULL DEFAULT 0,
   `is_free` TINYINT(1) NOT NULL DEFAULT 0,
   `is_bestseller` TINYINT(1) NOT NULL DEFAULT 0,
@@ -298,9 +298,9 @@ INSERT INTO `categories` (`slug`, `name`, `icon_svg`, `pastel_bg_color`, `accent
 ('school-activity-packs', 'School Activity Packs', 'school', '#E0E7FF', '#4F46E5', 12);
 
 INSERT INTO `coupons` (`code`, `discount_percentage`, `min_order_paise`, `max_discount_paise`, `description`, `is_active`) VALUES
-('LITTLE10', 10, 2000, 5000, '10% off for all parents', 1),
-('SUPERMOM', 20, 5000, 10000, '20% off for great moms', 1),
-('SCHOOLPACK', 25, 9000, 20000, '25% educator bulk discount', 1);
+('LITTLE10', 10, 4000, 6000, '10% off on any colouring book or worksheet', 1),
+('SUPERMOM', 20, 8000, 12000, '20% off on all activity bundles for great moms', 1),
+('SCHOOLPACK', 25, 12000, 25000, '25% educator bulk discount', 1);
 
 INSERT INTO `site_settings` (`key_name`, `value_json`) VALUES
 ('brand_info', JSON_OBJECT(

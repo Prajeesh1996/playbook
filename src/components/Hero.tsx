@@ -62,7 +62,7 @@ export const Hero: React.FC<HeroProps> = ({ onExploreBooks, onExploreSchoolPacks
                 <div className="text-[11px] sm:text-xs font-bold text-neutral-600">Printable Pages</div>
               </div>
               <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-2.5 sm:p-3 border border-sky-200/60 shadow-xs">
-                <div className="text-xl sm:text-2xl font-extrabold text-[#0284C7]">₹29</div>
+                <div className="text-xl sm:text-2xl font-extrabold text-[#0284C7]">₹49</div>
                 <div className="text-[11px] sm:text-xs font-bold text-neutral-600">Starting Price</div>
               </div>
               <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-2.5 sm:p-3 border border-emerald-200/60 shadow-xs">
@@ -158,7 +158,7 @@ export const Hero: React.FC<HeroProps> = ({ onExploreBooks, onExploreSchoolPacks
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                   <span>High-Res 300 DPI Vector PDF</span>
                 </div>
-                <span className="text-xs font-black text-[#FF8A65]">From ₹29</span>
+                <span className="text-xs font-black text-[#FF8A65]">From ₹49</span>
               </div>
             </div>
           </div>

@@ -27,15 +27,15 @@ dbOrders.set('ord_demo_101', {
   customerName: 'Priya Sharma',
   customerEmail: 'priya.sharma@example.com',
   customerPhone: '+91 98765 43210',
-  totalAmountPaise: 5800,
+  totalAmountPaise: 9300,
   razorpayOrderId: 'order_test_928374291',
   razorpayPaymentId: 'pay_test_8839201948',
   status: 'paid',
   downloadToken: 'tok_demo_secure_884920',
   tokenExpiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
   items: [
-    { productId: 'prod-1', title: 'Animal Colouring Book', pricePaise: 2900 },
-    { productId: 'prod-2', title: 'My First ABC Colouring Book', pricePaise: 3900 },
+    { productId: 'prod-1', title: 'Animal Colouring Book', pricePaise: 4900 },
+    { productId: 'prod-2', title: 'My First ABC Colouring Book', pricePaise: 5900 },
   ],
   createdAt: new Date().toISOString(),
 });

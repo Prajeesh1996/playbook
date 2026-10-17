@@ -55,7 +55,7 @@ Open [http://localhost:3000](http://localhost:3000) to browse and test.
 ## 2. Testing Razorpay in Test Mode
 
 1. In `src/components/CheckoutModal.tsx` and `server.ts`, the app is configured to seamlessly run in test mode when test keys (`rzp_test_*`) are present, or in full simulation mode if keys are blank.
-2. Select any colouring book (e.g., *Animal Colouring Book* for ₹29).
+2. Select any colouring book (e.g., *Animal Colouring Book* for ₹49).
 3. Proceed to checkout, enter Parent Name, Email, and Phone number.
 4. Click **Pay & Unlock Instant Downloads**.
 5. The payment confirmation will trigger:
@@ -218,4 +218,4 @@ sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
    RAZORPAY_KEY_SECRET="xxxxxxxxxxxxxxxxxxxxxxxx"
    ```
 5. Restart your Node.js application (`pm2 restart littlecolourworld` or restart in hPanel).
-6. Perform a live test purchase of ₹29 using your real UPI / Google Pay to verify end-to-end receipt generation and immediate PDF delivery!
+6. Perform a live test purchase of ₹49 using your real UPI / Google Pay to verify end-to-end receipt generation and immediate PDF delivery!
