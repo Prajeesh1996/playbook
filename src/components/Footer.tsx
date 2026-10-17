@@ -2,6 +2,7 @@ import React from 'react';
 import { RainbowLogo } from '../utils/illustrations';
 import { Heart, ShieldCheck, Mail, Phone, Download } from 'lucide-react';
 import { LegalDocType } from './LegalModals';
+import { useRouter } from '../context/RouterContext';
 
 interface FooterProps {
   onNavigate: (sectionId: string) => void;
@@ -16,6 +17,8 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenMyDownloads,
   onOpenAdmin,
 }) => {
+  const { navigate } = useRouter();
+
   return (
     <footer className="bg-neutral-900 text-neutral-300 pt-16 pb-12 border-t-4 border-[#FFD93D]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -23,13 +26,18 @@ export const Footer: React.FC<FooterProps> = ({
           {/* Brand info */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <RainbowLogo size={44} />
-              <div>
-                <span className="font-heading font-extrabold text-2xl text-white tracking-tight">
-                  Little <span className="text-[#FF8A65]">Colour</span> <span className="text-[#6BCBFF]">World</span>
-                </span>
-                <p className="text-xs font-bold text-amber-400">Little Hands, Big Imagination! 🌈</p>
-              </div>
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center gap-3 text-left cursor-pointer"
+              >
+                <RainbowLogo size={44} />
+                <div>
+                  <span className="font-heading font-extrabold text-2xl text-white tracking-tight">
+                    Little <span className="text-[#FF8A65]">Colour</span> <span className="text-[#6BCBFF]">World</span>
+                  </span>
+                  <p className="text-xs font-bold text-amber-400">Little Hands, Big Imagination! 🌈</p>
+                </div>
+              </button>
             </div>
 
             <p className="text-xs text-neutral-400 leading-relaxed font-medium max-w-sm">
@@ -56,32 +64,32 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-2 text-xs font-bold text-neutral-400">
               <li>
                 <button
-                  onClick={() => onNavigate('colouring-books')}
-                  className="hover:text-amber-400 transition-colors text-left"
+                  onClick={() => navigate('/books')}
+                  className="hover:text-amber-400 transition-colors text-left cursor-pointer"
                 >
                   Colouring Books (Ages 2–6)
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => onNavigate('categories')}
-                  className="hover:text-amber-400 transition-colors text-left"
+                  onClick={() => navigate('/books')}
+                  className="hover:text-amber-400 transition-colors text-left cursor-pointer"
                 >
                   Explore Categories
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => onNavigate('school-packs')}
-                  className="hover:text-amber-400 transition-colors text-left"
+                  onClick={() => navigate('/schools')}
+                  className="hover:text-amber-400 transition-colors text-left cursor-pointer"
                 >
                   School &amp; Nursery Packs
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => onNavigate('about-us')}
-                  className="hover:text-amber-400 transition-colors text-left"
+                  onClick={() => navigate('/about')}
+                  className="hover:text-amber-400 transition-colors text-left cursor-pointer"
                 >
                   Our Philosophy
                 </button>
@@ -97,8 +105,8 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-2 text-xs font-bold text-neutral-400">
               <li>
                 <button
-                  onClick={onOpenMyDownloads}
-                  className="flex items-center gap-1.5 text-sky-400 hover:text-sky-300 font-extrabold text-left"
+                  onClick={() => navigate('/my-downloads')}
+                  className="flex items-center gap-1.5 text-sky-400 hover:text-sky-300 font-extrabold text-left cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>My Downloads (Recover Files)</span>
@@ -106,8 +114,8 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <button
-                  onClick={() => onNavigate('contact')}
-                  className="hover:text-amber-400 transition-colors text-left"
+                  onClick={() => navigate('/contact')}
+                  className="hover:text-amber-400 transition-colors text-left cursor-pointer"
                 >
                   Frequently Asked Questions
                 </button>
@@ -123,8 +131,8 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <button
-                  onClick={onOpenAdmin}
-                  className="hover:text-amber-400 transition-colors text-left text-neutral-500"
+                  onClick={() => navigate('/admin')}
+                  className="hover:text-amber-400 transition-colors text-left text-neutral-500 cursor-pointer"
                 >
                   Admin Portal Login
                 </button>
@@ -140,32 +148,32 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-2 text-xs font-bold text-neutral-400">
               <li>
                 <button
-                  onClick={() => onOpenLegal('privacy')}
-                  className="hover:text-amber-400 transition-colors text-left"
+                  onClick={() => navigate('/privacy-policy')}
+                  className="hover:text-amber-400 transition-colors text-left cursor-pointer"
                 >
                   Privacy Policy
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => onOpenLegal('terms')}
-                  className="hover:text-amber-400 transition-colors text-left"
+                  onClick={() => navigate('/terms-and-conditions')}
+                  className="hover:text-amber-400 transition-colors text-left cursor-pointer"
                 >
                   Terms and Conditions
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => onOpenLegal('refund')}
-                  className="hover:text-amber-400 transition-colors text-left"
+                  onClick={() => navigate('/refund-policy')}
+                  className="hover:text-amber-400 transition-colors text-left cursor-pointer"
                 >
                   Refund &amp; Cancellation Policy
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => onOpenLegal('delivery')}
-                  className="hover:text-amber-400 transition-colors text-left"
+                  onClick={() => navigate('/shipping-delivery')}
+                  className="hover:text-amber-400 transition-colors text-left cursor-pointer"
                 >
                   Digital Delivery Policy
                 </button>

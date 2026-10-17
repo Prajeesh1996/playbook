@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Search, ShoppingBag, Download, Menu, X, Shield, Sparkles } from 'lucide-react';
 import { RainbowLogo } from '../utils/illustrations';
 import { useCart } from '../context/CartContext';
+import { useRouter } from '../context/RouterContext';
 
 interface HeaderProps {
-  activeSection: string;
-  onNavigate: (sectionId: string) => void;
-  onOpenMyDownloads: () => void;
-  onOpenAdmin: () => void;
+  activeSection?: string;
+  onNavigate?: (sectionId: string) => void;
+  onOpenMyDownloads?: () => void;
+  onOpenAdmin?: () => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
@@ -21,22 +22,32 @@ export const Header: React.FC<HeaderProps> = ({
   setSearchQuery,
 }) => {
   const { cartCount, setIsCartDrawerOpen } = useCart();
+  const { route, navigate } = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
   const navLinks = [
-    { id: 'home', label: 'Home' },
-    { id: 'colouring-books', label: 'Colouring Books' },
-    { id: 'worksheets', label: 'Worksheets' },
-    { id: 'activity-books', label: 'Activity Books' },
-    { id: 'school-packs', label: 'School Packs' },
-    { id: 'about-us', label: 'About Us' },
-    { id: 'contact', label: 'Contact' },
+    { id: 'home', path: '/', label: 'Home' },
+    { id: 'colouring-books', path: '/books', label: 'Colouring Books' },
+    { id: 'worksheets', path: '/category/tracing-worksheets', label: 'Worksheets' },
+    { id: 'activity-books', path: '/category/school-activity-packs', label: 'Activity Books' },
+    { id: 'school-packs', path: '/schools', label: 'School Packs' },
+    { id: 'about-us', path: '/about', label: 'About Us' },
+    { id: 'contact', path: '/contact', label: 'Contact' },
   ];
 
-  const handleNavClick = (id: string) => {
-    onNavigate(id);
+  const handleNavClick = (link: { id: string; path: string }) => {
+    navigate(link.path);
+    if (onNavigate) onNavigate(link.id);
     setMobileMenuOpen(false);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/books?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+    }
   };
 
   return (
@@ -56,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center justify-between h-20 gap-4">
             {/* Logo */}
             <button
-              onClick={() => handleNavClick('home')}
+              onClick={() => handleNavClick({ id: 'home', path: '/' })}
               className="flex items-center gap-3 text-left group cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-xl p-1"
             >
               <div className="relative">
@@ -75,15 +86,15 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Desktop Navigation */}
             <nav className="hidden xl:flex items-center gap-6 text-sm font-bold text-neutral-700">
               {navLinks.map((link) => {
-                const isActive = activeSection === link.id;
+                const isActive =
+                  (link.path === '/' && route.path === '/') ||
+                  (link.path !== '/' && route.path.startsWith(link.path));
                 return (
                   <button
                     key={link.id}
-                    onClick={() => handleNavClick(link.id)}
+                    onClick={() => handleNavClick(link)}
                     className={`whitespace-nowrap transition-all px-2 py-1 relative cursor-pointer ${
-                      isActive
-                        ? 'text-[#FF8A65] font-extrabold'
-                        : 'hover:text-[#FF8A65]'
+                      isActive ? 'text-[#FF8A65] font-extrabold' : 'hover:text-[#FF8A65]'
                     }`}
                   >
                     {link.label}
@@ -100,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Search Toggle */}
               <div className="relative">
                 {searchOpen ? (
-                  <div className="flex items-center bg-white border-2 border-amber-300 rounded-full pl-3 pr-2 py-1 shadow-inner w-44 sm:w-60 transition-all">
+                  <form onSubmit={handleSearchSubmit} className="flex items-center bg-white border-2 border-amber-300 rounded-full pl-3 pr-2 py-1 shadow-inner w-44 sm:w-60 transition-all">
                     <Search className="w-4 h-4 text-amber-600 shrink-0" />
                     <input
                       type="text"
@@ -111,19 +122,20 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-full bg-transparent border-none text-xs sm:text-sm px-2 py-0.5 focus:outline-none text-neutral-800"
                     />
                     <button
+                      type="button"
                       onClick={() => {
                         setSearchOpen(false);
                         setSearchQuery('');
                       }}
-                      className="p-1 hover:bg-neutral-100 rounded-full text-neutral-400"
+                      className="p-1 hover:bg-neutral-100 rounded-full text-neutral-400 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
-                  </div>
+                  </form>
                 ) : (
                   <button
                     onClick={() => setSearchOpen(true)}
-                    className="p-2.5 rounded-full bg-amber-50 text-neutral-700 hover:bg-amber-100 hover:text-amber-800 transition-colors"
+                    className="p-2.5 rounded-full bg-amber-50 text-neutral-700 hover:bg-amber-100 hover:text-amber-800 transition-colors cursor-pointer"
                     title="Search products"
                     aria-label="Search products"
                   >
@@ -134,8 +146,11 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* My Downloads Button */}
               <button
-                onClick={onOpenMyDownloads}
-                className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-sky-50 text-sky-800 hover:bg-sky-100 font-bold text-xs transition-colors border border-sky-200"
+                onClick={() => {
+                  navigate('/my-downloads');
+                  if (onOpenMyDownloads) onOpenMyDownloads();
+                }}
+                className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-sky-50 text-sky-800 hover:bg-sky-100 font-bold text-xs transition-colors border border-sky-200 cursor-pointer"
                 title="Access previous purchases"
               >
                 <Download className="w-4 h-4 text-sky-600" />
@@ -159,8 +174,11 @@ export const Header: React.FC<HeaderProps> = ({
 
               {/* Admin Portal Button */}
               <button
-                onClick={onOpenAdmin}
-                className="p-2 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+                onClick={() => {
+                  navigate('/admin');
+                  if (onOpenAdmin) onOpenAdmin();
+                }}
+                className="p-2 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors cursor-pointer"
                 title="Admin Dashboard"
                 aria-label="Admin Dashboard"
               >
@@ -170,7 +188,7 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Mobile Hamburger Menu Toggle */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="xl:hidden p-2 rounded-xl text-neutral-800 hover:bg-amber-100 transition-colors"
+                className="xl:hidden p-2 rounded-xl text-neutral-800 hover:bg-amber-100 transition-colors cursor-pointer"
                 aria-label="Toggle navigation menu"
               >
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -186,9 +204,9 @@ export const Header: React.FC<HeaderProps> = ({
               {navLinks.map((link) => (
                 <button
                   key={link.id}
-                  onClick={() => handleNavClick(link.id)}
-                  className={`px-4 py-3 text-left rounded-xl text-sm font-bold transition-colors ${
-                    activeSection === link.id
+                  onClick={() => handleNavClick(link)}
+                  className={`px-4 py-3 text-left rounded-xl text-sm font-bold transition-colors cursor-pointer ${
+                    (link.path === '/' && route.path === '/') || (link.path !== '/' && route.path.startsWith(link.path))
                       ? 'bg-amber-100 text-amber-900'
                       : 'bg-white hover:bg-amber-50 text-neutral-700'
                   }`}
@@ -202,9 +220,9 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  onOpenMyDownloads();
+                  navigate('/my-downloads');
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-sky-100 text-sky-900 font-bold text-sm"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-sky-100 text-sky-900 font-bold text-sm cursor-pointer"
               >
                 <Download className="w-4 h-4 text-sky-600" />
                 <span>My Downloads (Recover Purchases)</span>
@@ -213,9 +231,9 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  onOpenAdmin();
+                  navigate('/admin');
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-neutral-100 text-neutral-700 font-semibold text-xs"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-neutral-100 text-neutral-700 font-semibold text-xs cursor-pointer"
               >
                 <Shield className="w-4 h-4" />
                 <span>Admin Portal</span>

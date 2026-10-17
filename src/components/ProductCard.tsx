@@ -2,6 +2,7 @@ import React from 'react';
 import { Product } from '../types';
 import { Eye, ShoppingBag, Zap, FileText } from 'lucide-react';
 import { PreviewArtworkPicker } from '../utils/illustrations';
+import { useRouter } from '../context/RouterContext';
 
 interface ProductCardProps {
   product: Product;
@@ -16,6 +17,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   onBuyNow,
 }) => {
+  const { navigate } = useRouter();
   const discountPercent =
     product.originalPrice > product.discountedPrice
       ? Math.round(((product.originalPrice - product.discountedPrice) / product.originalPrice) * 100)
@@ -42,14 +44,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Center Artwork */}
-        <div className="flex-1 flex items-center justify-center p-2 relative">
+        <div
+          onClick={() => navigate(`/book/${product.slug}`)}
+          className="flex-1 flex items-center justify-center p-2 relative cursor-pointer"
+        >
           <div className="w-full h-full max-h-36 sm:max-h-44 transition-transform group-hover:scale-105 duration-200">
             <PreviewArtworkPicker type={previewArtType} isColoured={true} />
           </div>
 
           {/* Quick Preview Hover Overlay */}
           <button
-            onClick={() => onPreview(product)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPreview(product);
+            }}
             className="absolute inset-0 m-auto w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/95 text-neutral-900 flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 cursor-pointer"
             title="Preview inside pages"
             aria-label={`Preview pages of ${product.title}`}
@@ -72,13 +80,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="space-y-1.5 flex-1 flex flex-col justify-between">
         <div>
           {/* Category */}
-          <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider truncate">
+          <div
+            onClick={() =>
+              navigate(`/category/${product.category.toLowerCase().replace(/[^a-z0-9]/g, '-')}`)
+            }
+            className="text-[11px] font-bold text-amber-700 uppercase tracking-wider truncate cursor-pointer hover:underline"
+          >
             {product.category}
           </div>
 
           {/* Title */}
           <h4
-            onClick={() => onPreview(product)}
+            onClick={() => navigate(`/book/${product.slug}`)}
             className="font-heading font-extrabold text-sm sm:text-base text-neutral-900 group-hover:text-[#FF8A65] transition-colors line-clamp-2 leading-snug cursor-pointer"
           >
             {product.title}

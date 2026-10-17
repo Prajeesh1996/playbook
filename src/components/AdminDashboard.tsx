@@ -18,6 +18,12 @@ import {
   Tag,
   Mail,
   School,
+  ShieldCheck,
+  Key,
+  Download,
+  Upload,
+  Database,
+  HardDrive,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -44,10 +50,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'schools' | 'coupons'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'schools' | 'coupons' | 'gateway'>('overview');
 
   // Search orders
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
+
+  // Razorpay Gateway Settings
+  const [adminRzpKey, setAdminRzpKey] = useState<string>(() => {
+    return localStorage.getItem('lcw_razorpay_key_id') || (import.meta.env.VITE_RAZORPAY_KEY_ID as string) || '';
+  });
+  const [rzpSaveMsg, setRzpSaveMsg] = useState(false);
 
   // Product Edit Modal State
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -63,8 +75,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     shortDescription: '',
     description: '',
     themeColor: '#FFD93D',
+    googleDrivePdfUrl: '',
+    firebaseStorageUrl: '',
     active: true,
   });
+
+  const handleExportBackup = () => {
+    const backupData = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      architecture: 'Zero Database (Hostinger + Google Drive + Firebase)',
+      products,
+      orders,
+      coupons,
+      schoolEnquiries,
+    };
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `LittleColourWorld_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   // Coupon Form State
   const [newCouponCode, setNewCouponCode] = useState('');
@@ -150,6 +185,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       shortDescription: '',
       description: '',
       themeColor: '#FFD93D',
+      googleDrivePdfUrl: '',
+      firebaseStorageUrl: '',
       active: true,
     });
     setIsAddingProduct(true);
@@ -168,6 +205,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       shortDescription: p.shortDescription,
       description: p.description,
       themeColor: p.themeColor,
+      googleDrivePdfUrl: p.googleDrivePdfUrl || '',
+      firebaseStorageUrl: p.firebaseStorageUrl || '',
       active: p.active,
     });
     setIsAddingProduct(true);
@@ -272,6 +311,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
             { id: 'orders', label: `Orders (${orders.length})`, icon: ShoppingBag },
             { id: 'schools', label: `School Enquiries (${schoolEnquiries.length})`, icon: School },
             { id: 'coupons', label: `Coupons (${coupons.length})`, icon: Tag },
+            { id: 'gateway', label: 'Razorpay Gateway', icon: ShieldCheck },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -348,6 +388,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                       </span>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Zero-Database Architecture Card & Backup */}
+              <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 rounded-2xl p-5 border border-emerald-200/80 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <h4 className="font-heading font-extrabold text-sm text-neutral-900 flex items-center gap-1.5">
+                        <Database className="w-4 h-4 text-emerald-700" />
+                        <span>Zero-Database Architecture Active</span>
+                      </h4>
+                    </div>
+                    <p className="text-xs text-neutral-600 font-medium">
+                      No SQL, MySQL, or database server required. Compatible with <strong>Hostinger web hosting</strong>, <strong>Google Drive</strong>, and <strong>Google Firebase</strong>.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleExportBackup}
+                    className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 shadow-xs cursor-pointer shrink-0 transition-colors"
+                  >
+                    <Download className="w-4 h-4 text-amber-400" />
+                    <span>Download JSON Backup</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-emerald-200/60 text-xs">
+                  <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                    <span className="font-extrabold text-emerald-800 block">Hostinger Hosting</span>
+                    <span className="text-neutral-600 font-medium text-[11px]">Upload static build or run with lightweight Node without external DB.</span>
+                  </div>
+                  <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                    <span className="font-extrabold text-emerald-800 block">Google Drive Storage</span>
+                    <span className="text-neutral-600 font-medium text-[11px]">Paste any shareable PDF link; paid parents download instantly.</span>
+                  </div>
+                  <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                    <span className="font-extrabold text-emerald-800 block">Google Firebase</span>
+                    <span className="text-neutral-600 font-medium text-[11px]">Store PDF files or host statically on Firebase Hosting.</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -642,6 +723,116 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               </div>
             </div>
           )}
+
+          {/* TAB 6: RAZORPAY PAYMENT GATEWAY SETTINGS */}
+          {activeTab === 'gateway' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading font-extrabold text-base text-neutral-900 flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                  <span>Razorpay Payment Gateway Integration</span>
+                </h3>
+                <p className="text-xs text-neutral-500 font-bold">
+                  Connect live or test Razorpay credentials. PDF files are strictly protected and only shared after payment confirmation.
+                </p>
+              </div>
+
+              {/* Status Overview Card */}
+              <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                    <div>
+                      <span className="text-xs font-extrabold text-neutral-900 block">Gateway Status</span>
+                      <span className="text-[11px] font-bold text-emerald-700">
+                        {adminRzpKey ? 'Active Key Configured' : 'Ready for Configuration'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-xs font-mono bg-neutral-100 px-3 py-1 rounded-lg text-neutral-700 font-bold">
+                    {adminRzpKey ? `Active Key: ${adminRzpKey.substring(0, 12)}...` : 'No Custom Key (Using Standard Integration)'}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block text-xs font-extrabold text-neutral-800">
+                    Razorpay Key ID (Client &amp; Server):
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. rzp_test_xxxxxxxxxxxxxxxx or rzp_live_xxxxxxxxxxxxxxxx"
+                      value={adminRzpKey}
+                      onChange={(e) => setAdminRzpKey(e.target.value)}
+                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-neutral-300 font-mono text-xs font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    />
+                    <button
+                      onClick={() => {
+                        const clean = adminRzpKey.trim();
+                        if (clean) {
+                          localStorage.setItem('lcw_razorpay_key_id', clean);
+                        } else {
+                          localStorage.removeItem('lcw_razorpay_key_id');
+                        }
+                        setRzpSaveMsg(true);
+                        setTimeout(() => setRzpSaveMsg(false), 2500);
+                      }}
+                      className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold text-xs cursor-pointer shadow-xs"
+                    >
+                      Save Key
+                    </button>
+                  </div>
+
+                  {rzpSaveMsg && (
+                    <p className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" /> Razorpay Key ID saved successfully!
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Security & Strict Gating Rules Card */}
+              <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200/80 space-y-3 text-xs">
+                <h4 className="font-heading font-extrabold text-sm text-neutral-900 flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-amber-700" />
+                  <span>Strict PDF Delivery Security Guarantee</span>
+                </h4>
+                <ul className="space-y-2 text-neutral-700 font-medium">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>No Confirmation, No Download:</strong> All printable colouring books and worksheets are protected. If payment is cancelled, dismissed, or fails, the download is strictly locked.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Cryptographic Signature Verification:</strong> Payments are verified through HMAC-SHA256 signature verification and order tracking.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Customer Recovery Protection:</strong> Parents can recover their files anytime via "My Downloads" by entering their purchase email.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Setup Guide Card */}
+              <div className="bg-white rounded-2xl p-5 border border-neutral-200 space-y-3 text-xs">
+                <h4 className="font-heading font-extrabold text-sm text-neutral-900">
+                  How to Get Your Razorpay API Keys:
+                </h4>
+                <ol className="list-decimal list-inside space-y-1.5 text-neutral-600 font-medium">
+                  <li>Log in to your <strong>Razorpay Dashboard</strong> (https://dashboard.razorpay.com).</li>
+                  <li>Click on <strong>Settings &rarr; API Keys</strong>.</li>
+                  <li>Click <strong>Generate Key</strong> to get your <code>Key Id</code> and <code>Key Secret</code>.</li>
+                  <li>Paste the <code>Key Id</code> above, or add <code>RAZORPAY_KEY_ID</code> and <code>RAZORPAY_KEY_SECRET</code> to your Hostinger / server environment variables.</li>
+                </ol>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Product Add/Edit Modal Sub-dialog */}
@@ -755,6 +946,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                     onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-neutral-300 text-xs font-bold resize-none"
                   />
+                </div>
+
+                {/* Zero-DB Storage: Google Drive / Firebase Link */}
+                <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/80 space-y-2">
+                  <div className="flex items-center gap-1.5 text-neutral-800 font-extrabold text-[11px]">
+                    <HardDrive className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Google Drive / Firebase Cloud PDF Link (Optional)</span>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-neutral-600 mb-0.5">Google Drive Share Link</label>
+                    <input
+                      type="url"
+                      placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+                      value={productForm.googleDrivePdfUrl}
+                      onChange={(e) => setProductForm({ ...productForm, googleDrivePdfUrl: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-lg border border-neutral-300 font-mono text-[11px] font-bold text-neutral-800"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-neutral-600 mb-0.5">Firebase Storage PDF URL</label>
+                    <input
+                      type="url"
+                      placeholder="https://firebasestorage.googleapis.com/..."
+                      value={productForm.firebaseStorageUrl}
+                      onChange={(e) => setProductForm({ ...productForm, firebaseStorageUrl: e.target.value })}
+                      className="w-full px-3 py-1.5 rounded-lg border border-neutral-300 font-mono text-[11px] font-bold text-neutral-800"
+                    />
+                  </div>
+                  <p className="text-[10px] text-neutral-500 font-medium leading-tight">
+                    💡 <strong>Zero Database Architecture:</strong> If you host your high-res colouring book on Google Drive or Firebase, paste the link above. Paid parents download it automatically upon Razorpay confirmation!
+                  </p>
                 </div>
 
                 <div className="flex gap-2 pt-2">

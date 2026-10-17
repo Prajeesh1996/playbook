@@ -53,6 +53,8 @@ export interface Product {
   isBestSeller?: boolean;
   themeColor: string; // Hex color for card accent
   badgeText?: string;
+  googleDrivePdfUrl?: string; // Optional Google Drive shareable link for printable PDF
+  firebaseStorageUrl?: string; // Optional Google Firebase storage link
   active: boolean;
   createdAt: string;
 }

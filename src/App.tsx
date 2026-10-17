@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { CategorySection } from './components/CategorySection';
@@ -15,17 +15,29 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { LegalModals, LegalDocType } from './components/LegalModals';
 import { Footer } from './components/Footer';
 
+// Dynamic Pages
+import { ProductDetailPage } from './pages/ProductDetailPage';
+import { CategoryPage } from './pages/CategoryPage';
+import { BooksCatalogPage } from './pages/BooksCatalogPage';
+import { SchoolsPage } from './pages/SchoolsPage';
+import { AboutPage } from './pages/AboutPage';
+import { ContactPage } from './pages/ContactPage';
+import { LegalPage } from './pages/LegalPage';
+import { MyDownloadsPage } from './pages/MyDownloadsPage';
+
 import { AppProvider, useApp } from './context/AppContext';
 import { CartProvider, useCart } from './context/CartContext';
+import { RouterProvider, useRouter } from './context/RouterContext';
+import { updatePageSEO } from './utils/seo';
 import { Product, ProductCategory, Order } from './types';
 import { ShoppingBag, ArrowRight } from 'lucide-react';
 
 const MainApp: React.FC = () => {
   const { products } = useApp();
   const { addToCart, cartCount, total, setIsCartDrawerOpen } = useCart();
+  const { route, navigate } = useRouter();
 
-  // Active section & search
-  const [activeSection, setActiveSection] = useState<string>('home');
+  // Search query state
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'All'>('All');
 
@@ -46,19 +58,50 @@ const MainApp: React.FC = () => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  // Home Page dynamic SEO
+  useEffect(() => {
+    if (route.type === 'home') {
+      updatePageSEO({
+        title: 'Little Colour World – Printable Colouring Books for Kids (Ages 2–6)',
+        description:
+          'Discover magical printable colouring books, fun worksheets, and creative learning activities for preschool, nursery, LKG, and UKG children. Instant PDF downloads.',
+        canonicalPath: '/',
+        ogType: 'website',
+        jsonLd: {
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: 'Little Colour World',
+          alternateName: 'Little Hands, Big Imagination!',
+          url: window.location.origin,
+          description:
+            'Printable colouring books, worksheets, and educational activity PDFs for preschool, nursery, LKG, and UKG children.',
+        },
+      });
+    }
+  }, [route.type]);
+
   const handleNavigate = (sectionId: string) => {
-    setActiveSection(sectionId);
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    } else if (sectionId === 'home') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (sectionId === 'home') {
+      navigate('/');
+    } else if (sectionId === 'colouring-books' || sectionId === 'worksheets' || sectionId === 'activity-books') {
+      navigate('/books');
+    } else if (sectionId === 'school-packs') {
+      navigate('/schools');
+    } else if (sectionId === 'about-us') {
+      navigate('/about');
+    } else if (sectionId === 'contact') {
+      navigate('/contact');
+    } else {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
   const handleSelectCategory = (cat: ProductCategory) => {
-    setSelectedCategory(cat);
-    handleNavigate('colouring-books');
+    const slug = cat.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    navigate(`/category/${slug}`);
   };
 
   const handleResetCategory = () => {
@@ -96,54 +139,116 @@ const MainApp: React.FC = () => {
 
       {/* Header */}
       <Header
-        activeSection={activeSection}
+        activeSection={route.type}
         onNavigate={handleNavigate}
-        onOpenMyDownloads={() => setIsMyDownloadsOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenMyDownloads={() => navigate('/my-downloads')}
+        onOpenAdmin={() => navigate('/admin')}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <Hero
-          onExploreBooks={() => handleNavigate('colouring-books')}
-          onExploreSchoolPacks={() => handleNavigate('school-packs')}
-        />
+        {/* DYNAMIC PAGE ROUTING BASED ON URL */}
+        {route.type === 'home' && (
+          <>
+            {/* Hero Section */}
+            <Hero
+              onExploreBooks={() => navigate('/books')}
+              onExploreSchoolPacks={() => navigate('/schools')}
+            />
 
-        {/* 12 Playful Categories */}
-        <CategorySection
-          onSelectCategory={handleSelectCategory}
-          selectedCategory={selectedCategory}
-        />
+            {/* 12 Playful Categories */}
+            <CategorySection
+              onSelectCategory={handleSelectCategory}
+              selectedCategory={selectedCategory}
+            />
 
-        {/* Featured Products Grid */}
-        <ProductGrid
-          products={products.filter((p) => p.active)}
-          selectedCategory={selectedCategory}
-          onResetCategory={handleResetCategory}
-          onPreview={(p) => setPreviewProduct(p)}
-          onAddToCart={handleAddToCart}
-          onBuyNow={handleBuyNow}
-          searchQuery={searchQuery}
-        />
+            {/* Featured Best-Sellers Grid */}
+            <ProductGrid
+              products={products.filter((p) => p.active)}
+              selectedCategory={selectedCategory}
+              onResetCategory={handleResetCategory}
+              onPreview={(p) => setPreviewProduct(p)}
+              onAddToCart={handleAddToCart}
+              onBuyNow={handleBuyNow}
+              searchQuery={searchQuery}
+            />
 
-        {/* School Packs & Playschool Licensing */}
-        <SchoolPacksSection />
+            {/* School Packs Summary */}
+            <SchoolPacksSection />
 
-        {/* About Us & Child Development */}
-        <AboutUsSection />
+            {/* About Us & Child Development */}
+            <AboutUsSection />
 
-        {/* Contact & FAQ */}
-        <ContactSection />
+            {/* Contact & FAQ */}
+            <ContactSection />
+          </>
+        )}
+
+        {/* /books - All Colouring Books Catalog Page */}
+        {route.type === 'books' && (
+          <BooksCatalogPage
+            onPreview={(p) => setPreviewProduct(p)}
+            onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
+          />
+        )}
+
+        {/* /book/:slug - Dedicated Product Detail Page */}
+        {route.type === 'product' && (
+          <ProductDetailPage
+            slug={route.params.slug}
+            onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
+          />
+        )}
+
+        {/* /category/:slug - Dedicated Category Page */}
+        {route.type === 'category' && (
+          <CategoryPage
+            categorySlug={route.params.slug}
+            onPreview={(p) => setPreviewProduct(p)}
+            onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
+          />
+        )}
+
+        {/* /schools - School Packs & Bulk Licensing Page */}
+        {route.type === 'schools' && <SchoolsPage />}
+
+        {/* /about - About Us Page */}
+        {route.type === 'about' && <AboutPage />}
+
+        {/* /contact - Contact & Help Center Page */}
+        {route.type === 'contact' && <ContactPage />}
+
+        {/* /my-downloads - Dedicated Order Recovery Page */}
+        {route.type === 'my-downloads' && <MyDownloadsPage />}
+
+        {/* /privacy-policy, /terms-and-conditions, etc. - Legal Policy Pages */}
+        {route.type === 'legal' && (
+          <LegalPage docType={route.params.doc as any} />
+        )}
+
+        {/* /admin - Admin Control Dashboard */}
+        {route.type === 'admin' && (
+          <div className="py-6">
+            <AdminDashboard onClose={() => navigate('/')} />
+          </div>
+        )}
       </main>
 
       {/* Footer */}
       <Footer
         onNavigate={handleNavigate}
-        onOpenLegal={(doc) => setActiveLegalDoc(doc)}
-        onOpenMyDownloads={() => setIsMyDownloadsOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenLegal={(doc) => {
+          if (doc === 'privacy') navigate('/privacy-policy');
+          else if (doc === 'terms') navigate('/terms-and-conditions');
+          else if (doc === 'refund') navigate('/refund-policy');
+          else if (doc === 'delivery') navigate('/shipping-delivery');
+        }}
+        onOpenMyDownloads={() => navigate('/my-downloads')}
+        onOpenAdmin={() => navigate('/admin')}
       />
 
       {/* Sticky Mobile Bottom Bar if Cart Has Items */}
@@ -163,7 +268,7 @@ const MainApp: React.FC = () => {
 
           <button
             onClick={() => setIsCartDrawerOpen(true)}
-            className="px-4 py-2 rounded-xl bg-[#FFD93D] text-neutral-900 font-black text-xs flex items-center gap-1 shadow-xs"
+            className="px-4 py-2 rounded-xl bg-[#FFD93D] text-neutral-900 font-black text-xs flex items-center gap-1 shadow-xs cursor-pointer"
           >
             <span>View Backpack</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -174,7 +279,7 @@ const MainApp: React.FC = () => {
       {/* Cart Drawer */}
       <CartDrawer onProceedToCheckout={handleProceedFromCart} />
 
-      {/* Product Details & Sample Preview Modal */}
+      {/* Quick View Sample Preview Modal */}
       <ProductDetailModal
         product={previewProduct}
         onClose={() => setPreviewProduct(null)}
@@ -187,7 +292,10 @@ const MainApp: React.FC = () => {
           handleBuyNow(p);
         }}
         allProducts={products}
-        onSelectRelated={(p) => setPreviewProduct(p)}
+        onSelectRelated={(p) => {
+          setPreviewProduct(p);
+          navigate(`/book/${p.slug}`);
+        }}
       />
 
       {/* Razorpay Checkout Modal */}
@@ -211,7 +319,7 @@ const MainApp: React.FC = () => {
         />
       )}
 
-      {/* My Downloads Portal */}
+      {/* My Downloads Modal Fallback */}
       {isMyDownloadsOpen && (
         <MyDownloadsModal
           onClose={() => setIsMyDownloadsOpen(false)}
@@ -219,12 +327,12 @@ const MainApp: React.FC = () => {
         />
       )}
 
-      {/* Admin Dashboard */}
+      {/* Admin Dashboard Modal Fallback */}
       {isAdminOpen && (
         <AdminDashboard onClose={() => setIsAdminOpen(false)} />
       )}
 
-      {/* Legal Modals */}
+      {/* Legal Modals Fallback */}
       <LegalModals
         activeDoc={activeLegalDoc}
         onClose={() => setActiveLegalDoc(null)}
@@ -237,7 +345,9 @@ export default function App() {
   return (
     <AppProvider>
       <CartProvider>
-        <MainApp />
+        <RouterProvider>
+          <MainApp />
+        </RouterProvider>
       </CartProvider>
     </AppProvider>
   );

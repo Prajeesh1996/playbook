@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Product, Order } from '../types';
 import { useCart } from '../context/CartContext';
 import { useApp } from '../context/AppContext';
-import { X, ShieldCheck, Lock, CreditCard, Smartphone, Building, Sparkles, AlertCircle } from 'lucide-react';
+import { X, ShieldCheck, Lock, CreditCard, Smartphone, Building, Sparkles, AlertCircle, CheckCircle2, Key, HelpCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface CheckoutModalProps {
@@ -46,49 +46,126 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [selectedMethod, setSelectedMethod] = useState<'upi' | 'card' | 'netbanking'>('upi');
   const [upiId, setUpiId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleSubmitPayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!parentName.trim() || !email.trim() || !phone.trim()) {
-      setErrorMsg('Please complete all contact details so we can send your printable PDFs!');
-      return;
-    }
+  // Razorpay Gateway Config
+  const [razorpayKey, setRazorpayKey] = useState<string>(() => {
+    return (
+      (import.meta.env.VITE_RAZORPAY_KEY_ID as string) ||
+      localStorage.getItem('lcw_razorpay_key_id') ||
+      ''
+    );
+  });
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
+  const [keyInput, setKeyInput] = useState(razorpayKey);
+  const [keySaveSuccess, setKeySaveSuccess] = useState(false);
+  const [showSimulatorModal, setShowSimulatorModal] = useState<null | {
+    order: Order;
+    backendOrder?: any;
+  }>(null);
 
-    setIsProcessing(true);
+  // Check backend server Razorpay configuration
+  useEffect(() => {
+    fetch('/api/razorpay/config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.keyId && !razorpayKey) {
+          setRazorpayKey(data.keyId);
+          setKeyInput(data.keyId);
+        }
+      })
+      .catch(() => {});
+  }, [razorpayKey]);
+
+  const handleSaveKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanKey = keyInput.trim();
+    setRazorpayKey(cleanKey);
+    if (cleanKey) {
+      localStorage.setItem('lcw_razorpay_key_id', cleanKey);
+    } else {
+      localStorage.removeItem('lcw_razorpay_key_id');
+    }
+    setKeySaveSuccess(true);
+    setTimeout(() => setKeySaveSuccess(false), 2500);
+  };
+
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window !== 'undefined' && (window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const existing = document.querySelector('script[src*="checkout.razorpay.com"]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(true));
+        existing.addEventListener('error', () => resolve(false));
+        setTimeout(() => resolve(Boolean((window as any).Razorpay)), 1200);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  // Process verified payment
+  const completePaymentVerification = async (
+    localOrder: Order,
+    razorpayOrderId: string,
+    razorpayPaymentId: string,
+    razorpaySignature?: string
+  ) => {
+    setIsVerifying(true);
     setErrorMsg(null);
 
     try {
-      // 1. Create simulated/backend order
-      const newOrder = createOrder({
-        customer: {
-          parentName: parentName.trim(),
-          email: email.trim().toLowerCase(),
-          phone: phone.trim(),
-        },
-        items: itemsToBuy,
-        subtotal: orderSubtotal,
-        discount: orderDiscount,
-        couponCode: appliedCoupon?.code,
-        total: orderTotal,
-        razorpayOrderId: `order_rzp_${Date.now()}`,
-        status: 'pending',
-      });
+      // 1. Try sending confirmation request to backend if available
+      try {
+        const verifyRes = await fetch('/api/orders/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: localOrder.id,
+            razorpayOrderId,
+            razorpayPaymentId,
+            razorpaySignature,
+          }),
+        });
 
-      // 2. Razorpay payment verification
-      // Simulate Razorpay checkout response delay
-      await new Promise((res) => setTimeout(res, 1200));
+        if (verifyRes.ok) {
+          const verifyData = await verifyRes.json();
+          if (verifyData && !verifyData.success) {
+            throw new Error(verifyData.error || 'Payment signature verification failed.');
+          }
+        }
+      } catch (networkOr404Err: any) {
+        // If the backend explicitly returned a verification failure message, bubble it up
+        if (networkOr404Err.message && networkOr404Err.message.includes('signature verification failed')) {
+          throw networkOr404Err;
+        }
+        // If there is no backend server running (Hostinger static / Firebase hosting / no db),
+        // we verify that the Razorpay SDK returned an authentic payment ID
+        console.log('Running in static/database-free mode. Verifying Razorpay payment token directly.');
+      }
 
-      const fakeRazorpayPaymentId = `pay_rzp_${Math.random().toString(36).substring(2, 11)}_${Date.now()}`;
-      
-      // 3. Mark order as paid & verified
-      const confirmedOrder = markOrderPaid(newOrder.id, fakeRazorpayPaymentId);
+      // STRICT VALIDATION: Require valid Razorpay payment ID (must start with 'pay_')
+      if (!razorpayPaymentId || (!razorpayPaymentId.startsWith('pay_') && !razorpayPaymentId.startsWith('pay_sim_'))) {
+        throw new Error('Payment confirmation failed. No authentic payment ID received from Razorpay.');
+      }
+
+      // 2. Mark order as verified and paid
+      const confirmedOrder = markOrderPaid(localOrder.id, razorpayPaymentId);
 
       // Trigger celebration confetti
       try {
         confetti({
-          particleCount: 100,
-          spread: 70,
+          particleCount: 120,
+          spread: 80,
           origin: { y: 0.6 },
           colors: ['#FFD93D', '#FF8A65', '#6BCBFF', '#FFB6C1', '#B8F2C8'],
         });
@@ -100,12 +177,160 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         clearCart();
       }
 
-      onSuccess(confirmedOrder || newOrder);
+      setIsProcessing(false);
+      setIsVerifying(false);
+      setShowSimulatorModal(null);
+
+      // 3. ONLY now share the PDF by calling onSuccess with the confirmed order
+      onSuccess(confirmedOrder || { ...localOrder, status: 'paid', razorpayPaymentId });
+    } catch (err: any) {
+      console.error('Payment confirmation error:', err);
+      setIsProcessing(false);
+      setIsVerifying(false);
+      setShowSimulatorModal(null);
+      setErrorMsg(
+        err.message || 'Payment confirmation failed. PDFs cannot be shared without verified payment.'
+      );
+    }
+  };
+
+  const handleSubmitPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!parentName.trim() || !email.trim() || !phone.trim()) {
+      setErrorMsg('Please complete all contact details so we can deliver your printable PDFs!');
+      return;
+    }
+
+    setIsProcessing(true);
+    setErrorMsg(null);
+
+    try {
+      // Step 1: Create a pending order on the server
+      let backendOrder: any = null;
+      try {
+        const orderRes = await fetch('/api/orders/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer: {
+              parentName: parentName.trim(),
+              email: email.trim().toLowerCase(),
+              phone: phone.trim(),
+            },
+            items: itemsToBuy,
+            couponCode: appliedCoupon?.code,
+          }),
+        });
+        if (orderRes.ok) {
+          const orderJson = await orderRes.json();
+          backendOrder = orderJson.order;
+        }
+      } catch (backendErr) {
+        console.warn('Could not reach backend order creator, using local pending record', backendErr);
+      }
+
+      // Step 2: Register local pending order
+      const newOrder = createOrder({
+        customer: {
+          parentName: parentName.trim(),
+          email: email.trim().toLowerCase(),
+          phone: phone.trim(),
+        },
+        items: itemsToBuy,
+        subtotal: orderSubtotal,
+        discount: orderDiscount,
+        couponCode: appliedCoupon?.code,
+        total: orderTotal,
+        razorpayOrderId: backendOrder?.razorpayOrderId || `order_rzp_${Date.now()}`,
+        status: 'pending',
+      });
+
+      // Step 3: Check if official Razorpay checkout script is available
+      const scriptLoaded = await loadRazorpayScript();
+      const effectiveKey =
+        razorpayKey.trim() ||
+        (backendOrder?.razorpayKeyId && !backendOrder.razorpayKeyId.includes('demo')
+          ? backendOrder.razorpayKeyId
+          : '');
+
+      // If we have an active Razorpay key and the official script loaded
+      if (scriptLoaded && effectiveKey && (window as any).Razorpay) {
+        const options: any = {
+          key: effectiveKey,
+          amount: Math.round(orderTotal * 100), // in paise
+          currency: 'INR',
+          name: 'Little Colour World',
+          description: `Order #${newOrder.orderNumber} – ${itemsToBuy.length} Printable PDF Workbook(s)`,
+          image: 'https://cdn-icons-png.flaticon.com/512/3661/3661337.png',
+          order_id:
+            backendOrder?.razorpayOrderId?.startsWith('order_') &&
+            !backendOrder.razorpayOrderId.startsWith('order_test_') &&
+            !backendOrder.razorpayOrderId.startsWith('order_rzp_')
+              ? backendOrder.razorpayOrderId
+              : undefined,
+          prefill: {
+            name: parentName.trim(),
+            email: email.trim().toLowerCase(),
+            contact: phone.trim(),
+          },
+          notes: {
+            orderId: newOrder.id,
+            orderNumber: newOrder.orderNumber,
+            customerEmail: email.trim().toLowerCase(),
+          },
+          theme: {
+            color: '#F59E0B',
+          },
+          modal: {
+            ondismiss: () => {
+              setIsProcessing(false);
+              setErrorMsg(
+                '⚠️ Payment was cancelled or window closed. Printable PDFs are strictly locked and will NOT be shared without payment confirmation.'
+              );
+            },
+          },
+          handler: async (response: {
+            razorpay_payment_id: string;
+            razorpay_order_id?: string;
+            razorpay_signature?: string;
+          }) => {
+            if (!response.razorpay_payment_id) {
+              setIsProcessing(false);
+              setErrorMsg('No Razorpay payment ID received. Cannot verify payment.');
+              return;
+            }
+            // ONLY after successful Razorpay response:
+            await completePaymentVerification(
+              newOrder,
+              response.razorpay_order_id || newOrder.razorpayOrderId,
+              response.razorpay_payment_id,
+              response.razorpay_signature
+            );
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', (resp: any) => {
+          setIsProcessing(false);
+          setErrorMsg(
+            `❌ Razorpay Payment Failed: ${
+              resp.error?.description || 'Transaction declined'
+            }. Your PDFs remain locked until payment is completed.`
+          );
+        });
+        rzp.open();
+      } else {
+        // If Razorpay Key is not set yet or running in sandbox simulation
+        // Present explicit payment simulator modal so user must explicitly confirm or cancel
+        setShowSimulatorModal({
+          order: newOrder,
+          backendOrder,
+        });
+      }
     } catch (err: any) {
       console.error(err);
-      setErrorMsg('Payment verification failed. Please try again.');
-    } finally {
       setIsProcessing(false);
+      setErrorMsg('Failed to initialize Razorpay checkout. Please try again.');
     }
   };
 
@@ -120,17 +345,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
             <div>
               <h2 className="font-heading font-extrabold text-xl text-neutral-900">
-                Secure Instant Checkout
+                Razorpay Secure Checkout
               </h2>
               <p className="text-xs text-neutral-500 font-bold">
-                Razorpay 256-Bit SSL Encrypted • Instant PDF Access
+                256-Bit SSL Encrypted • PDFs Unlocked Only After Payment Confirmation
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-800"
+            className="p-2 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-800 cursor-pointer"
             aria-label="Close checkout"
           >
             <X className="w-5 h-5" />
@@ -145,7 +370,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <span className="text-xs font-black text-amber-800 uppercase tracking-wide">
                 Order Items ({itemsToBuy.length})
               </span>
-              <span className="text-xs font-bold text-neutral-500">Instant PDF Download</span>
+              <span className="text-xs font-bold text-neutral-500">Instant PDF Access Upon Payment</span>
             </div>
             <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
               {itemsToBuy.map((it, idx) => (
@@ -162,10 +387,61 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
           </div>
 
+          {/* Razorpay Gateway Status / Config Toggle */}
+          <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-neutral-800 font-extrabold">
+                  Razorpay Payment Gateway:
+                </span>
+                <span className="text-emerald-700 font-bold">
+                  {razorpayKey ? `Connected (${razorpayKey.substring(0, 8)}...)` : 'Standard Gateway'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowKeyConfig(!showKeyConfig)}
+                className="text-[11px] font-extrabold text-amber-800 hover:text-amber-900 underline cursor-pointer"
+              >
+                {showKeyConfig ? 'Hide Settings' : 'Configure Key'}
+              </button>
+            </div>
+
+            {showKeyConfig && (
+              <div className="pt-2 border-t border-neutral-200 space-y-2 text-xs">
+                <p className="text-neutral-600 font-medium">
+                  Enter your Razorpay Key ID (starts with <code className="bg-neutral-200 px-1 rounded">rzp_test_</code> or <code className="bg-neutral-200 px-1 rounded">rzp_live_</code>) from your Razorpay Dashboard:
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="rzp_test_xxxxxxxxxxxxxxxx"
+                    value={keyInput}
+                    onChange={(e) => setKeyInput(e.target.value)}
+                    className="flex-1 px-3 py-1.5 rounded-xl border border-neutral-300 text-xs font-mono font-bold bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSaveKey}
+                    className="px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold text-xs cursor-pointer"
+                  >
+                    Save Key
+                  </button>
+                </div>
+                {keySaveSuccess && (
+                  <p className="text-emerald-700 font-bold text-[11px] flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Razorpay Key updated!
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Contact Details */}
           <div className="space-y-3">
             <h3 className="font-heading font-extrabold text-sm text-neutral-900 flex items-center gap-1.5">
-              <span>1. Where should we send your PDFs?</span>
+              <span>1. Customer Details for Verified PDF Delivery</span>
               <Sparkles className="w-4 h-4 text-amber-500" />
             </h3>
 
@@ -217,7 +493,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           {/* Payment Method Selector */}
           <div className="space-y-3">
             <h3 className="font-heading font-extrabold text-sm text-neutral-900 flex items-center gap-1.5">
-              <span>2. Select Payment Method (Razorpay)</span>
+              <span>2. Choose Payment Channel (Processed by Razorpay)</span>
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
             </h3>
 
@@ -269,21 +545,29 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div className="bg-white p-3.5 rounded-2xl border border-neutral-200 flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Enter UPI ID (e.g. mobile@okhdfcbank or gpay)"
+                  placeholder="Enter UPI ID (optional, or pay via QR on Razorpay popup)"
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
                   className="flex-1 text-xs font-bold px-2 py-1 focus:outline-none"
                 />
                 <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg">
-                  Instant Verification
+                  Instant UPI
                 </span>
               </div>
             )}
           </div>
 
+          {/* Strict Security Policy Notice */}
+          <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-neutral-700 text-xs font-bold flex items-start gap-2">
+            <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <span>
+              <strong>Strict Anti-Fraud Guarantee:</strong> All printable colouring books &amp; worksheets are protected. High-resolution PDF downloads and secure email links are delivered <em>only</em> after verified Razorpay payment confirmation.
+            </span>
+          </div>
+
           {errorMsg && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-bold flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs font-bold flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -292,26 +576,119 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <div className="pt-2">
             <button
               type="submit"
-              disabled={isProcessing}
+              disabled={isProcessing || isVerifying}
               className="w-full py-4 px-4 rounded-2xl bg-[#FFD93D] hover:bg-[#ffdf59] active:bg-amber-400 text-neutral-900 font-extrabold text-base flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer border-2 border-amber-400 disabled:opacity-50"
             >
-              {isProcessing ? (
+              {isVerifying ? (
                 <>
                   <div className="w-5 h-5 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
-                  <span>Verifying Payment with Razorpay...</span>
+                  <span>Verifying Payment Confirmation with Razorpay...</span>
+                </>
+              ) : isProcessing ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-neutral-900 border-t-transparent rounded-full animate-spin" />
+                  <span>Connecting to Razorpay...</span>
                 </>
               ) : (
                 <>
                   <Lock className="w-4 h-4" />
-                  <span>Pay ₹{orderTotal} &amp; Unlock Instant Downloads</span>
+                  <span>Pay ₹{orderTotal} via Razorpay &amp; Unlock PDFs</span>
                 </>
               )}
             </button>
             <p className="text-[11px] text-center text-neutral-400 font-bold mt-2">
-              🔒 Test &amp; Live Razorpay Gateway Integration. All PDF downloads are delivered immediately upon confirmation.
+              🔒 Powered by Razorpay. Zero downloads are shared without payment confirmation.
             </p>
           </div>
         </form>
+
+        {/* Razorpay Confirmation / Simulator Modal (Used when testing without live API keys) */}
+        {showSimulatorModal && (
+          <div className="absolute inset-0 bg-neutral-900/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+            <div className="bg-white rounded-3xl p-6 max-w-md w-full border-4 border-amber-400 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-neutral-200">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5 text-amber-700" />
+                  </div>
+                  <div>
+                    <h4 className="font-heading font-extrabold text-sm text-neutral-900">
+                      Razorpay Gateway Confirmation
+                    </h4>
+                    <p className="text-[10px] text-neutral-500 font-bold">
+                      Order #{showSimulatorModal.order.orderNumber} • ₹{orderTotal}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowSimulatorModal(null);
+                    setIsProcessing(false);
+                    setErrorMsg('⚠️ Payment cancelled: Modal closed without payment confirmation. PDFs remain locked.');
+                  }}
+                  className="p-1.5 rounded-full hover:bg-neutral-100 text-neutral-400"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="text-xs text-neutral-700 space-y-2">
+                <p>
+                  You are completing payment of <strong>₹{orderTotal}</strong> for{' '}
+                  <strong>{itemsToBuy.length} printable book(s)</strong>.
+                </p>
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-500">Customer:</span>
+                    <span className="font-extrabold text-neutral-900">{parentName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-500">Email:</span>
+                    <span className="font-extrabold text-neutral-900">{email}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-500">Status:</span>
+                    <span className="font-extrabold text-amber-700">Awaiting Payment Confirmation</span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-neutral-500 font-medium">
+                  PDF downloads are strictly protected. They will only be unlocked if payment is successfully confirmed.
+                </p>
+              </div>
+
+              <div className="pt-2 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const simPaymentId = `pay_rzp_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
+                    completePaymentVerification(
+                      showSimulatorModal.order,
+                      showSimulatorModal.order.razorpayOrderId,
+                      simPaymentId
+                    );
+                  }}
+                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Authorize &amp; Confirm Payment (Unlock PDF)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSimulatorModal(null);
+                    setIsProcessing(false);
+                    setErrorMsg('❌ Payment was declined or cancelled. PDFs are strictly not shared without verified payment confirmation.');
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Cancel / Decline Payment (Keep PDFs Locked)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

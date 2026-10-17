@@ -1,34 +1,142 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core Store Pages -->
   <url>
     <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/</loc>
-    <lastmod>2026-10-16</lastmod>
+    <lastmod>2026-10-17</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/#colouring-books</loc>
-    <lastmod>2026-10-16</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/books</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
-
   <url>
-    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/#school-packs</loc>
-    <lastmod>2026-10-16</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/schools</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/#about-us</loc>
-    <lastmod>2026-10-16</lastmod>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/about</loc>
+    <lastmod>2026-10-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/#contact</loc>
-    <lastmod>2026-10-16</lastmod>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/contact</loc>
+    <lastmod>2026-10-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/my-downloads</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Dynamic Product Pages -->
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/book/animal-colouring-book</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/book/my-first-abc-colouring-book</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/book/numbers-1-20-colouring-book</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/book/fruits-vegetables-fun</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/book/chirpy-birds-colouring</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/book/fun-vehicles-transport</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Dynamic Category Pages -->
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/category/animals-colouring</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/category/alphabet-colouring</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/category/numbers-colouring</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/category/fruits-vegetables</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/category/birds-colouring</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/category/vehicles-colouring</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Legal & Trust Pages -->
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/privacy-policy</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/terms-and-conditions</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/refund-policy</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://ais-dev-l5ikwjs2xdyu7mppeznptm-691913623389.asia-east1.run.app/shipping-delivery</loc>
+    <lastmod>2026-10-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>

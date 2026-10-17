@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Product, Order } from '../types';
-import { X, Download, Mail, Search, CheckCircle2, AlertCircle } from 'lucide-react';
-import { generateProductPDF } from '../utils/pdfGenerator';
+import { X, Download, Mail, Search, CheckCircle2, AlertCircle, ShieldCheck, Lock } from 'lucide-react';
+import { generateProductPDF, downloadProduct } from '../utils/pdfGenerator';
 import { PreviewArtworkPicker } from '../utils/illustrations';
 
 interface MyDownloadsModalProps {
@@ -20,12 +20,21 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput.trim()) return;
-    const results = getOrdersByEmail(emailInput);
+    // STRICT SECURITY: Only display orders with verified 'paid' status and Razorpay Payment ID
+    const results = getOrdersByEmail(emailInput).filter(
+      (o) => o.status === 'paid' && Boolean(o.razorpayPaymentId)
+    );
     setSearchedOrders(results);
     setHasSearched(true);
   };
 
-  const handleDownloadItem = async (productId: string, title: string) => {
+  const handleDownloadItem = async (ord: Order, productId: string, title: string) => {
+    // STRICT PAYMENT CHECK: Refuse download if order is not paid or missing payment ID
+    if (ord.status !== 'paid' || !ord.razorpayPaymentId) {
+      alert('⚠️ Access Denied: Printable PDFs can only be shared after verified Razorpay payment confirmation.');
+      return;
+    }
+
     setDownloadingId(productId);
     try {
       const prod = allProducts.find((p) => p.id === productId) || {
@@ -51,7 +60,7 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
         createdAt: new Date().toISOString(),
       };
 
-      await generateProductPDF(prod, 'Little Artist');
+      await downloadProduct(prod, 'Little Artist');
     } catch (err) {
       console.error(err);
     } finally {
@@ -73,14 +82,14 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
                 My Downloads Portal
               </h2>
               <p className="text-xs text-neutral-500 font-bold">
-                Access and re-download all your purchased colouring books
+                Access your verified purchases • Razorpay Confirmation Protected
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-800"
+            className="p-2 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-800 cursor-pointer"
             aria-label="Close downloads portal"
           >
             <X className="w-5 h-5" />
@@ -115,7 +124,7 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
               </button>
             </div>
             <p className="text-[11px] text-neutral-500 font-medium">
-              Demo tip: Try <strong>priya.sharma@example.com</strong> or any email you used during checkout!
+              Demo tip: Try <strong>priya.sharma@example.com</strong> or the email you used during checkout!
             </p>
           </form>
 
@@ -135,8 +144,16 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
                       className="bg-white rounded-2xl p-4 border border-neutral-200 shadow-2xs space-y-3"
                     >
                       <div className="flex items-center justify-between text-xs font-bold text-neutral-500 pb-2 border-b border-neutral-100">
-                        <span>Order #{ord.orderNumber}</span>
-                        <span>{new Date(ord.createdAt).toLocaleDateString()}</span>
+                        <div>
+                          <span className="font-extrabold text-neutral-900">Order #{ord.orderNumber}</span>
+                          <span className="text-neutral-400 ml-2">
+                            {new Date(ord.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>{ord.razorpayPaymentId}</span>
+                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -149,13 +166,18 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
                               <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
                                 <PreviewArtworkPicker type="lion" isColoured={true} />
                               </div>
-                              <span className="text-xs font-extrabold text-neutral-900 truncate">
-                                {item.title}
-                              </span>
+                              <div className="min-w-0">
+                                <span className="text-xs font-extrabold text-neutral-900 block truncate">
+                                  {item.title}
+                                </span>
+                                <span className="text-[10px] font-bold text-emerald-700">
+                                  Payment Confirmed (₹{item.price})
+                                </span>
+                              </div>
                             </div>
 
                             <button
-                              onClick={() => handleDownloadItem(item.productId, item.title)}
+                              onClick={() => handleDownloadItem(ord, item.productId, item.title)}
                               disabled={downloadingId === item.productId}
                               className="px-3 py-1.5 rounded-lg bg-[#FFD93D] hover:bg-[#ffdf59] text-neutral-900 font-extrabold text-[11px] flex items-center gap-1 shadow-2xs shrink-0 cursor-pointer"
                             >
@@ -172,25 +194,30 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
                 <div className="bg-amber-50 rounded-2xl p-6 text-center border border-amber-200 space-y-2">
                   <AlertCircle className="w-8 h-8 text-amber-600 mx-auto" />
                   <h4 className="font-heading font-extrabold text-sm text-neutral-900">
-                    No Purchases Found for this Email
+                    No Confirmed Purchases Found for this Email
                   </h4>
                   <p className="text-xs text-neutral-600">
-                    Please ensure you typed the exact email address used at checkout, or contact support if you need assistance.
+                    PDF downloads are strictly protected and only shared after successful Razorpay payment confirmation. Please verify the email used at checkout.
                   </p>
                 </div>
               )}
             </div>
           )}
+
+          {/* Security policy note */}
+          <div className="p-3 bg-sky-50 rounded-2xl border border-sky-200/80 text-[11px] font-bold text-sky-900 flex items-center gap-2">
+            <Lock className="w-4 h-4 text-sky-700 shrink-0" />
+            <span>
+              All digital files are strictly linked to verified Razorpay transaction confirmations.
+            </span>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-white border-t border-sky-200 flex items-center justify-between">
-          <span className="text-[11px] font-bold text-neutral-400">
-            Print unlimited copies for your home or classroom
-          </span>
+        <div className="p-4 bg-white border-t border-sky-200 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-extrabold text-xs"
+            className="px-5 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold text-xs cursor-pointer"
           >
             Close
           </button>

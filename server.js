@@ -137,13 +137,22 @@ app.post('/api/orders/create', async (req, res) => {
         amountPaise: finalAmountPaise,
         currency: 'INR',
         downloadToken,
-        razorpayKeyId: razorpayKeyId || 'rzp_test_demo_mode',
+        razorpayKeyId: razorpayKeyId || process.env.VITE_RAZORPAY_KEY_ID || '',
       },
     });
   } catch (err) {
     console.error('Error creating order:', err);
     res.status(500).json({ error: 'Failed to create order.' });
   }
+});
+
+// API: Check Razorpay Gateway configuration
+app.get('/api/razorpay/config', (_req, res) => {
+  const keyId = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || '';
+  res.json({
+    configured: Boolean(keyId),
+    keyId: keyId,
+  });
 });
 
 // API: Verify Razorpay Payment Signature
@@ -156,31 +165,75 @@ app.post('/api/orders/verify', (req, res) => {
       return res.status(404).json({ error: 'Order not found.' });
     }
 
+    if (!razorpayPaymentId) {
+      order.status = 'failed';
+      return res.status(400).json({ error: 'Missing Razorpay payment ID. Payment confirmation required.' });
+    }
+
     const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
 
-    if (razorpaySecret && razorpaySignature) {
+    if (razorpaySecret) {
+      if (!razorpaySignature) {
+        order.status = 'failed';
+        return res.status(400).json({ error: 'Razorpay signature is required for payment verification.' });
+      }
+
+      // Cryptographic HMAC SHA256 Signature Verification
       const hmac = crypto.createHmac('sha256', razorpaySecret);
       hmac.update(`${razorpayOrderId}|${razorpayPaymentId}`);
       const generatedSignature = hmac.digest('hex');
 
       if (generatedSignature !== razorpaySignature) {
         order.status = 'failed';
-        return res.status(400).json({ error: 'Invalid payment signature.' });
+        return res.status(400).json({ error: 'Invalid payment signature. Verification failed.' });
       }
     }
 
+    // Mark paid with verified payment ID
     order.status = 'paid';
-    order.razorpayPaymentId = razorpayPaymentId || `pay_sim_${Date.now()}`;
+    order.razorpayPaymentId = razorpayPaymentId;
 
     res.json({
       success: true,
-      message: 'Payment verified successfully! Your printable PDF downloads are active.',
+      message: 'Payment verified successfully! Your printable PDF downloads are unlocked.',
       downloadToken: order.downloadToken,
       expiresAt: order.tokenExpiresAt,
     });
   } catch (err) {
     res.status(500).json({ error: 'Payment verification failed.' });
   }
+});
+
+// API: Verify download token before giving access to PDF (only share when paid)
+app.get('/api/orders/verify-download/:token', (req, res) => {
+  const token = req.params.token;
+  let foundOrder;
+  for (const [_, ord] of dbOrders.entries()) {
+    if (ord.downloadToken === token) {
+      foundOrder = ord;
+      break;
+    }
+  }
+
+  if (!foundOrder) {
+    return res.status(404).json({ error: 'Order not found or invalid download token.' });
+  }
+
+  // STRICT SECURITY: Only share PDF if order is confirmed paid!
+  if (foundOrder.status !== 'paid' || !foundOrder.razorpayPaymentId) {
+    return res.status(403).json({
+      error: 'Access denied: Payment has not been confirmed. PDFs cannot be shared without payment confirmation.',
+      status: foundOrder.status,
+    });
+  }
+
+  res.json({
+    success: true,
+    paid: true,
+    orderNumber: foundOrder.orderNumber,
+    items: foundOrder.items,
+    razorpayPaymentId: foundOrder.razorpayPaymentId,
+  });
 });
 
 // API: Razorpay Webhook Handler

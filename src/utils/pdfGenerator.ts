@@ -377,3 +377,42 @@ function drawPageBorder(doc: jsPDF, width: number, height: number, pageNum: stri
   doc.text('Little Colour World • Printable Edition', 16, height - 13);
   doc.text(`Page ${pageNum}`, width - 16, height - 13, { align: 'right' });
 }
+
+/**
+ * Converts Google Drive sharing links into direct download links if applicable
+ */
+export function getDirectDownloadUrl(url: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  const match1 = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (match1 && match1[1]) {
+    return `https://drive.google.com/uc?export=download&id=${match1[1]}`;
+  }
+  const match2 = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (match2 && match2[1]) {
+    return `https://drive.google.com/uc?export=download&id=${match2[1]}`;
+  }
+  return trimmed;
+}
+
+/**
+ * Downloads printable PDF from Google Drive / Firebase if configured,
+ * or generates the customized high-resolution vector PDF in-browser.
+ */
+export async function downloadProduct(product: Product, childName: string = ''): Promise<void> {
+  const cloudUrl = product.googleDrivePdfUrl?.trim() || product.firebaseStorageUrl?.trim();
+  if (cloudUrl) {
+    const directUrl = getDirectDownloadUrl(cloudUrl);
+    const link = document.createElement('a');
+    link.href = directUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.download = `${product.title.replace(/[^a-zA-Z0-9]/g, '_')}_Little_Colour_World.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    return;
+  }
+  return generateProductPDF(product, childName);
+}
+
