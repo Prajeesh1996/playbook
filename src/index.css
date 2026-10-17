@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@theme {
+  --font-heading: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+  --font-display: 'Baloo 2', cursive, sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+
+  --color-sunshine: #FFD93D;
+  --color-sky: #6BCBFF;
+  --color-bubblegum: #FFB6C1;
+  --color-mint: #B8F2C8;
+  --color-purple-fun: #CDB4FF;
+  --color-coral: #FF8A65;
+  --color-cream: #FFFDF5;
+  --color-cocoa: #333333;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-cream);
+  color: var(--color-cocoa);
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+@keyframes gentle-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+
+@keyframes slow-drift {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(12px);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+.animate-float {
+  animation: gentle-float 4s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: gentle-float 4.5s ease-in-out 1.5s infinite;
+}
+
+.animate-drift {
+  animation: slow-drift 7s ease-in-out infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FFFDF5;
+}
+::-webkit-scrollbar-thumb {
+  background: #FFD93D;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FF8A65;
+}
