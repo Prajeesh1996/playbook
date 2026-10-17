@@ -2,13 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Product, Order } from '../types';
 import { useCart } from '../context/CartContext';
 import { useApp } from '../context/AppContext';
-import { X, ShieldCheck, Lock, CreditCard, Smartphone, Building, Sparkles, AlertCircle, CheckCircle2, Key, HelpCircle } from 'lucide-react';
+import { X, ShieldCheck, Lock, CreditCard, Smartphone, Building, Sparkles, AlertCircle, CheckCircle2, Key, HelpCircle, RefreshCw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface CheckoutModalProps {
   directProduct?: Product | null;
   onClose: () => void;
   onSuccess: (order: Order) => void;
+}
+
+export interface VerificationProgress {
+  order: Order;
+  paymentId: string;
+  stage: 'initiating' | 'polling_webhook' | 'verifying_signature' | 'granted' | 'failed';
+  message: string;
+  attempt?: number;
+  maxAttempts?: number;
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -47,6 +56,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [upiId, setUpiId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationProgress, setVerificationProgress] = useState<VerificationProgress | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Razorpay Gateway Config
@@ -123,6 +133,14 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   ) => {
     setIsVerifying(true);
     setErrorMsg(null);
+    setShowSimulatorModal(null);
+
+    setVerificationProgress({
+      order: localOrder,
+      paymentId: razorpayPaymentId,
+      stage: 'initiating',
+      message: 'Submitting payment confirmation to server verification gateway...',
+    });
 
     try {
       // STRICT VALIDATION: Require valid Razorpay payment ID (must start with 'pay_')
@@ -135,6 +153,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       let serverOrderNumber = localOrder.orderNumber;
 
       // 1. Mandatory server-side verification request
+      setVerificationProgress((prev) =>
+        prev
+          ? {
+              ...prev,
+              stage: 'verifying_signature',
+              message: 'Validating cryptographic payment signature and order state on server...',
+            }
+          : null
+      );
+
       const verifyRes = await fetch('/api/orders/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -165,8 +193,29 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       // If webhook has delivery latency, poll server status endpoint
       if (!serverVerified) {
-        for (let attempt = 0; attempt < 6; attempt++) {
+        setVerificationProgress((prev) =>
+          prev
+            ? {
+                ...prev,
+                stage: 'polling_webhook',
+                message: 'Awaiting server-side Razorpay webhook confirmation (payment.captured)...',
+                attempt: 1,
+                maxAttempts: 8,
+              }
+            : null
+        );
+
+        for (let attempt = 0; attempt < 8; attempt++) {
           await new Promise((res) => setTimeout(res, 1200));
+          setVerificationProgress((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  attempt: attempt + 1,
+                  message: `Awaiting Razorpay server webhook (payment.captured) confirmation (Attempt ${attempt + 1}/8)...`,
+                }
+              : null
+          );
           const statusRes = await fetch(`/api/orders/status/${localOrder.id}`);
           if (statusRes.ok) {
             const statusData = await statusRes.json();
@@ -186,6 +235,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           'Access Denied: Payment has not been verified by Razorpay webhook on the server. Client-side bypass prevented. PDF download access blocked.'
         );
       }
+
+      // Show verified success state on the verification screen
+      setVerificationProgress((prev) =>
+        prev
+          ? {
+              ...prev,
+              stage: 'granted',
+              message: 'Payment verified by server webhook! Secure download token granted. Unlocking your printable books...',
+            }
+          : null
+      );
+      await new Promise((res) => setTimeout(res, 900));
 
       // 2. Mark order as verified and paid locally ONLY with verified server download token
       const confirmedOrder = markOrderPaid(localOrder.id, razorpayPaymentId, verifiedDownloadToken, true);
@@ -220,7 +281,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       console.error('Payment confirmation error:', err);
       setIsProcessing(false);
       setIsVerifying(false);
-      setShowSimulatorModal(null);
+      setVerificationProgress((prev) =>
+        prev
+          ? {
+              ...prev,
+              stage: 'failed',
+              message: err.message || 'Payment confirmation failed. PDFs cannot be shared without verified Razorpay webhook confirmation.',
+            }
+          : {
+              order: localOrder,
+              paymentId: razorpayPaymentId,
+              stage: 'failed',
+              message: err.message || 'Payment confirmation failed. PDFs cannot be shared without verified Razorpay webhook confirmation.',
+            }
+      );
       setErrorMsg(
         err.message || 'Payment confirmation failed. PDFs cannot be shared without verified Razorpay webhook confirmation.'
       );
@@ -376,14 +450,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         <div className="p-5 sm:p-6 bg-white border-b border-amber-200 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="p-2.5 rounded-2xl bg-amber-100 text-neutral-800">
-              <Lock className="w-5 h-5 text-amber-700" />
+              {verificationProgress ? (
+                <ShieldCheck className="w-5 h-5 text-amber-700" />
+              ) : (
+                <Lock className="w-5 h-5 text-amber-700" />
+              )}
             </div>
             <div>
               <h2 className="font-heading font-extrabold text-xl text-neutral-900">
-                Razorpay Secure Checkout
+                {verificationProgress ? 'Server Order Verification' : 'Razorpay Secure Checkout'}
               </h2>
               <p className="text-xs text-neutral-500 font-bold">
-                256-Bit SSL Encrypted • PDFs Unlocked Only After Payment Confirmation
+                {verificationProgress
+                  ? 'Step 3 of 3 • Webhook Confirmation & Secure PDF Unlock'
+                  : '256-Bit SSL Encrypted • PDFs Unlocked Only After Payment Confirmation'}
               </p>
             </div>
           </div>
@@ -398,7 +478,155 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSubmitPayment} className="p-5 sm:p-7 space-y-6">
+        {verificationProgress ? (
+          <div className="p-6 sm:p-8 space-y-6">
+            <div className="text-center space-y-2">
+              <div className="inline-flex p-4 rounded-3xl bg-amber-100 text-amber-800 shadow-xs mb-1">
+                {verificationProgress.stage === 'granted' ? (
+                  <CheckCircle2 className="w-10 h-10 text-emerald-600 animate-bounce" />
+                ) : verificationProgress.stage === 'failed' ? (
+                  <AlertCircle className="w-10 h-10 text-red-600" />
+                ) : (
+                  <ShieldCheck className="w-10 h-10 text-amber-700 animate-pulse" />
+                )}
+              </div>
+              <h3 className="font-heading font-extrabold text-xl text-neutral-900">
+                {verificationProgress.stage === 'granted'
+                  ? 'Payment Confirmed by Server Webhook! 🎉'
+                  : verificationProgress.stage === 'failed'
+                  ? 'Verification Incomplete'
+                  : 'Server Order Verification in Progress'}
+              </h3>
+              <p className="text-xs font-bold text-neutral-600 max-w-md mx-auto">
+                {verificationProgress.message}
+              </p>
+            </div>
+
+            {/* Verification Progress Stepper */}
+            <div className="bg-white rounded-2xl p-5 border-2 border-neutral-200 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-neutral-100 text-xs">
+                <div>
+                  <span className="text-neutral-400 block text-[10px] font-bold">Order Reference</span>
+                  <span className="font-extrabold text-neutral-900">#{verificationProgress.order.orderNumber}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-neutral-400 block text-[10px] font-bold">Payment Transaction</span>
+                  <span className="font-mono text-emerald-700 font-extrabold text-[11px]">
+                    {verificationProgress.paymentId}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {/* Step 1: Gateway Transaction */}
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-extrabold text-neutral-900">1. Razorpay Payment Captured</p>
+                    <p className="text-[11px] text-neutral-400 font-bold truncate">Gateway transaction ID validated</p>
+                  </div>
+                </div>
+
+                {/* Step 2: Webhook Confirmation */}
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                      verificationProgress.stage === 'granted'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : verificationProgress.stage === 'failed'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-amber-100 text-amber-700'
+                    }`}
+                  >
+                    {verificationProgress.stage === 'granted' ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : verificationProgress.stage === 'failed' ? (
+                      <AlertCircle className="w-4 h-4" />
+                    ) : (
+                      <div className="w-3.5 h-3.5 border-2 border-amber-700 border-t-transparent rounded-full animate-spin" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-extrabold text-neutral-900">2. Authoritative Server Webhook Audit</p>
+                    <p className="text-[11px] text-neutral-400 font-bold">
+                      {verificationProgress.stage === 'granted'
+                        ? 'payment.captured event confirmed on server'
+                        : verificationProgress.stage === 'polling_webhook'
+                        ? `Awaiting server webhook delivery (Attempt ${verificationProgress.attempt || 1}/${verificationProgress.maxAttempts || 8})...`
+                        : 'Auditing server-side Razorpay webhook status & signature...'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Step 3: Download Token Authorization */}
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                      verificationProgress.stage === 'granted'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-neutral-100 text-neutral-400'
+                    }`}
+                  >
+                    {verificationProgress.stage === 'granted' ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : (
+                      <Lock className="w-3.5 h-3.5" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-extrabold text-neutral-900">3. PDF Download Token Issuance</p>
+                    <p className="text-[11px] text-neutral-400 font-bold">
+                      {verificationProgress.stage === 'granted'
+                        ? 'Signed download access token issued • PDFs unlocked'
+                        : 'Download links remain locked until server verification succeeds'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Strict Anti-Fraud Notice */}
+            <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-neutral-700 text-xs font-bold flex items-start gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <span className="text-[11px] leading-relaxed">
+                <strong>Server-Authoritative Gatekeeping:</strong> PDF download links are only exposed after confirmed server-side verification from the Razorpay webhook, preventing any client-side file access bypass.
+              </span>
+            </div>
+
+            {verificationProgress.stage === 'failed' && (
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    completePaymentVerification(
+                      verificationProgress.order,
+                      verificationProgress.order.razorpayOrderId,
+                      verificationProgress.paymentId
+                    );
+                  }}
+                  className="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-neutral-900 font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Retry Server Webhook Verification</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVerificationProgress(null);
+                    setIsProcessing(false);
+                    setIsVerifying(false);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-bold text-xs cursor-pointer"
+                >
+                  Return to Checkout
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <form onSubmit={handleSubmitPayment} className="p-5 sm:p-7 space-y-6">
           {/* Order Summary Strip */}
           <div className="bg-amber-50 rounded-2xl p-4 border border-amber-200/80">
             <div className="flex items-center justify-between mb-2">
@@ -636,6 +864,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </p>
           </div>
         </form>
+        )}
 
         {/* Razorpay Confirmation / Simulator Modal (Used when testing without live API keys) */}
         {showSimulatorModal && (
@@ -695,16 +924,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <button
                   type="button"
                   onClick={async () => {
+                    const simPaymentId = `pay_sim_${Date.now()}`;
+                    const targetOrder = showSimulatorModal.order;
+                    const targetRzpOrderId = showSimulatorModal.order.razorpayOrderId;
+                    setShowSimulatorModal(null);
                     setIsVerifying(true);
                     setErrorMsg(null);
                     try {
-                      const simPaymentId = `pay_sim_${Date.now()}`;
                       // Dispatch real server-side webhook simulation
                       const simRes = await fetch('/api/razorpay/webhook/simulate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                          orderId: showSimulatorModal.order.id,
+                          orderId: targetOrder.id,
                           razorpayPaymentId: simPaymentId,
                         }),
                       });
@@ -714,10 +946,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         throw new Error(simData.error || 'Server webhook simulation rejected. Access denied.');
                       }
 
-                      // Complete verification with server-verified order data
+                      // Complete verification step with server-verified order data
                       await completePaymentVerification(
-                        showSimulatorModal.order,
-                        showSimulatorModal.order.razorpayOrderId,
+                        targetOrder,
+                        targetRzpOrderId,
                         simPaymentId,
                         undefined,
                         simData.order.downloadToken

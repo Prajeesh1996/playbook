@@ -222,8 +222,8 @@ app.get('/api/orders/status/:orderId', (req: Request, res: Response) => {
   });
 });
 
-// API: Verify Razorpay Payment Signature & Webhook Confirmation
-app.post('/api/orders/verify', async (req: Request, res: Response) => {
+// API: Verify Razorpay Payment Signature & Webhook Confirmation (Order Verification Step)
+app.post(['/api/orders/verify', '/api/orders/verify-webhook'], async (req: Request, res: Response) => {
   try {
     const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
     let order = dbOrders.get(orderId);
@@ -247,11 +247,13 @@ app.post('/api/orders/verify', async (req: Request, res: Response) => {
         success: true,
         verified: true,
         webhookVerified: true,
+        accessGranted: true,
         message: 'Payment verified via Razorpay webhook on server. Printable PDF access granted.',
         downloadToken: order.downloadToken,
         orderNumber: order.orderNumber,
         razorpayPaymentId: order.razorpayPaymentId,
         expiresAt: order.tokenExpiresAt,
+        items: order.items,
       });
     }
 
@@ -312,11 +314,13 @@ app.post('/api/orders/verify', async (req: Request, res: Response) => {
         success: true,
         verified: true,
         webhookVerified: true,
+        accessGranted: true,
         message: 'Payment verified successfully by server. Printable PDF access granted.',
         downloadToken: order.downloadToken,
         orderNumber: order.orderNumber,
         razorpayPaymentId: order.razorpayPaymentId,
         expiresAt: order.tokenExpiresAt,
+        items: order.items,
       });
     }
 
@@ -326,6 +330,7 @@ app.post('/api/orders/verify', async (req: Request, res: Response) => {
       success: false,
       verified: false,
       webhookVerified: false,
+      accessGranted: false,
       pendingWebhook: true,
       message: 'Awaiting server-side Razorpay webhook confirmation before download access can be granted.',
     });
