@@ -8,8 +8,15 @@ interface AppContextType {
   updateProduct: (id: string, updates: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
   orders: Order[];
-  createOrder: (orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'downloadToken' | 'tokenExpiresAt'>) => Order;
-  markOrderPaid: (orderId: string, razorpayPaymentId: string) => Order | null;
+  createOrder: (
+    orderData: Partial<Order> & Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'downloadToken' | 'tokenExpiresAt'>
+  ) => Order;
+  markOrderPaid: (
+    orderId: string,
+    razorpayPaymentId: string,
+    verifiedDownloadToken?: string,
+    webhookVerified?: boolean
+  ) => Order | null;
   refundOrder: (orderId: string) => void;
   getOrderByToken: (token: string) => Order | undefined;
   getOrdersByEmail: (email: string) => Order[];
@@ -81,6 +88,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           razorpayOrderId: 'order_test_928374291',
           razorpayPaymentId: 'pay_test_8839201948',
           status: 'paid',
+          webhookVerified: true,
+          verifiedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
           downloadToken: 'tok_demo_secure_884920',
           tokenExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
@@ -187,15 +196,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createOrder = (
-    orderData: Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'downloadToken' | 'tokenExpiresAt'>
+    orderData: Partial<Order> & Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'downloadToken' | 'tokenExpiresAt'>
   ): Order => {
-    const orderNumber = `LCW-${Math.floor(10000 + Math.random() * 90000)}`;
-    const downloadToken = `tok_${Math.random().toString(36).substring(2, 12)}_${Date.now()}`;
+    const orderNumber = orderData.orderNumber || `LCW-${Math.floor(10000 + Math.random() * 90000)}`;
+    const downloadToken = orderData.downloadToken || `tok_${Math.random().toString(36).substring(2, 12)}_${Date.now()}`;
     const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30-day link validity
 
     const newOrder: Order = {
       ...orderData,
-      id: `ord_${Date.now()}`,
+      id: orderData.id || `ord_${Date.now()}`,
       orderNumber,
       downloadToken,
       tokenExpiresAt,
@@ -206,7 +215,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newOrder;
   };
 
-  const markOrderPaid = (orderId: string, razorpayPaymentId: string): Order | null => {
+  const markOrderPaid = (
+    orderId: string,
+    razorpayPaymentId: string,
+    verifiedDownloadToken?: string,
+    webhookVerified: boolean = true
+  ): Order | null => {
     let updatedOrder: Order | null = null;
     setOrders((prev) =>
       prev.map((ord) => {
@@ -214,7 +228,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           updatedOrder = {
             ...ord,
             status: 'paid',
+            webhookVerified,
+            verifiedAt: new Date().toISOString(),
             razorpayPaymentId,
+            downloadToken: verifiedDownloadToken || ord.downloadToken,
           };
           return updatedOrder;
         }

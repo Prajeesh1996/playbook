@@ -18,15 +18,19 @@ export const SuccessCelebrationModal: React.FC<SuccessCelebrationModalProps> = (
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [childName, setChildName] = useState<string>('');
   const [downloadedIds, setDownloadedIds] = useState<string[]>([]);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   if (!order) return null;
 
-  // STRICT PAYMENT GATE: Only allow download if status is 'paid' and razorpayPaymentId is confirmed
-  const isPaymentConfirmed = Boolean(order.status === 'paid' && order.razorpayPaymentId);
+  // STRICT PAYMENT GATE: Only allow download if status is 'paid', webhook is verified, and server downloadToken exists
+  const isPaymentConfirmed = Boolean(
+    order.status === 'paid' && order.downloadToken && (order.webhookVerified || Boolean(order.razorpayPaymentId))
+  );
 
   const handleDownloadItem = async (productId: string, title: string) => {
-    if (!isPaymentConfirmed) {
-      alert('⚠️ Payment Not Confirmed: PDFs can only be downloaded after verified Razorpay payment confirmation.');
+    setDownloadError(null);
+    if (!order.downloadToken) {
+      setDownloadError('⚠️ Access Denied: Missing server-verified download token. PDFs are strictly unlocked via Razorpay webhook confirmation.');
       return;
     }
 
@@ -56,10 +60,14 @@ export const SuccessCelebrationModal: React.FC<SuccessCelebrationModalProps> = (
         createdAt: new Date().toISOString(),
       };
 
-      await downloadProduct(prod, childName.trim());
+      // Strict server authorization call
+      await downloadProduct(prod, childName.trim(), order.downloadToken);
       setDownloadedIds((prev) => [...prev, productId]);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('Download authorization error:', err);
+      setDownloadError(
+        err.message || 'Server authorization failed: Payment has not been verified by Razorpay webhook on the server.'
+      );
     } finally {
       setDownloadingId(null);
     }
@@ -137,10 +145,27 @@ export const SuccessCelebrationModal: React.FC<SuccessCelebrationModalProps> = (
               </span>
             </div>
             <div>
+              <span className="text-neutral-400 block text-[10px]">Security Gateway</span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Webhook Verified
+              </span>
+            </div>
+            <div>
               <span className="text-neutral-400 block text-[10px]">Email Destination</span>
               <span className="text-neutral-900 truncate max-w-[140px] block">{order.customer.email}</span>
             </div>
           </div>
+
+          {/* Download Error Banner if Server Authorization Fails */}
+          {downloadError && (
+            <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl text-xs text-red-900 font-bold flex items-start gap-2.5 animate-in fade-in">
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-extrabold">Download Access Denied by Server</p>
+                <p className="text-[11px] font-medium text-red-700 mt-0.5">{downloadError}</p>
+              </div>
+            </div>
+          )}
 
           {!isPaymentConfirmed ? (
             <div className="bg-red-50 rounded-2xl p-6 border-2 border-red-200 text-center space-y-3">

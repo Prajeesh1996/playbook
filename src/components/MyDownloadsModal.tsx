@@ -16,22 +16,25 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
   const [searchedOrders, setSearchedOrders] = useState<Order[] | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput.trim()) return;
-    // STRICT SECURITY: Only display orders with verified 'paid' status and Razorpay Payment ID
+    setDownloadError(null);
+    // STRICT SECURITY: Only display orders with verified 'paid' status and valid download token
     const results = getOrdersByEmail(emailInput).filter(
-      (o) => o.status === 'paid' && Boolean(o.razorpayPaymentId)
+      (o) => o.status === 'paid' && Boolean(o.downloadToken)
     );
     setSearchedOrders(results);
     setHasSearched(true);
   };
 
   const handleDownloadItem = async (ord: Order, productId: string, title: string) => {
-    // STRICT PAYMENT CHECK: Refuse download if order is not paid or missing payment ID
-    if (ord.status !== 'paid' || !ord.razorpayPaymentId) {
-      alert('⚠️ Access Denied: Printable PDFs can only be shared after verified Razorpay payment confirmation.');
+    setDownloadError(null);
+    // STRICT PAYMENT CHECK: Refuse download if order is not paid or missing download token
+    if (ord.status !== 'paid' || !ord.downloadToken) {
+      setDownloadError('⚠️ Access Denied: Printable PDFs can only be downloaded after verified Razorpay webhook confirmation.');
       return;
     }
 
@@ -60,9 +63,13 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
         createdAt: new Date().toISOString(),
       };
 
-      await downloadProduct(prod, 'Little Artist');
-    } catch (err) {
+      // Strict server authorization call with downloadToken
+      await downloadProduct(prod, 'Little Artist', ord.downloadToken);
+    } catch (err: any) {
       console.error(err);
+      setDownloadError(
+        err.message || 'Server authorization failed: Payment has not been verified by Razorpay webhook.'
+      );
     } finally {
       setDownloadingId(null);
     }
@@ -128,14 +135,28 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
             </p>
           </form>
 
+          {/* Error Banner */}
+          {downloadError && (
+            <div className="p-3.5 bg-red-50 border-2 border-red-300 rounded-2xl text-xs text-red-900 font-bold flex items-start gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-extrabold">Download Access Denied by Server</p>
+                <p className="text-[11px] font-medium text-red-700 mt-0.5">{downloadError}</p>
+              </div>
+            </div>
+          )}
+
           {/* Search Results */}
           {hasSearched && (
             <div className="space-y-4 pt-2">
               {searchedOrders && searchedOrders.length > 0 ? (
                 <div className="space-y-4">
-                  <div className="text-xs font-black text-emerald-800 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Found {searchedOrders.length} verified purchase order(s):</span>
+                  <div className="text-xs font-black text-emerald-800 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>Found {searchedOrders.length} verified purchase order(s):</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-neutral-400">Razorpay Protected</span>
                   </div>
 
                   {searchedOrders.map((ord) => (
@@ -143,16 +164,21 @@ export const MyDownloadsModal: React.FC<MyDownloadsModalProps> = ({ onClose, all
                       key={ord.id}
                       className="bg-white rounded-2xl p-4 border border-neutral-200 shadow-2xs space-y-3"
                     >
-                      <div className="flex items-center justify-between text-xs font-bold text-neutral-500 pb-2 border-b border-neutral-100">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-neutral-500 pb-2 border-b border-neutral-100">
                         <div>
                           <span className="font-extrabold text-neutral-900">Order #{ord.orderNumber}</span>
                           <span className="text-neutral-400 ml-2">
                             {new Date(ord.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>{ord.razorpayPaymentId}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                            <span>Webhook Verified</span>
+                          </span>
+                          <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                            <span>{ord.razorpayPaymentId}</span>
+                          </div>
                         </div>
                       </div>
 

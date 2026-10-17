@@ -113,53 +113,79 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     });
   };
 
-  // Process verified payment
+  // Process verified payment strictly through server webhook confirmation
   const completePaymentVerification = async (
     localOrder: Order,
     razorpayOrderId: string,
     razorpayPaymentId: string,
-    razorpaySignature?: string
+    razorpaySignature?: string,
+    knownServerToken?: string
   ) => {
     setIsVerifying(true);
     setErrorMsg(null);
 
     try {
-      // 1. Try sending confirmation request to backend if available
-      try {
-        const verifyRes = await fetch('/api/orders/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: localOrder.id,
-            razorpayOrderId,
-            razorpayPaymentId,
-            razorpaySignature,
-          }),
-        });
-
-        if (verifyRes.ok) {
-          const verifyData = await verifyRes.json();
-          if (verifyData && !verifyData.success) {
-            throw new Error(verifyData.error || 'Payment signature verification failed.');
-          }
-        }
-      } catch (networkOr404Err: any) {
-        // If the backend explicitly returned a verification failure message, bubble it up
-        if (networkOr404Err.message && networkOr404Err.message.includes('signature verification failed')) {
-          throw networkOr404Err;
-        }
-        // If there is no backend server running (Hostinger static / Firebase hosting / no db),
-        // we verify that the Razorpay SDK returned an authentic payment ID
-        console.log('Running in static/database-free mode. Verifying Razorpay payment token directly.');
-      }
-
       // STRICT VALIDATION: Require valid Razorpay payment ID (must start with 'pay_')
       if (!razorpayPaymentId || (!razorpayPaymentId.startsWith('pay_') && !razorpayPaymentId.startsWith('pay_sim_'))) {
         throw new Error('Payment confirmation failed. No authentic payment ID received from Razorpay.');
       }
 
-      // 2. Mark order as verified and paid
-      const confirmedOrder = markOrderPaid(localOrder.id, razorpayPaymentId);
+      let serverVerified = false;
+      let verifiedDownloadToken = knownServerToken || '';
+      let serverOrderNumber = localOrder.orderNumber;
+
+      // 1. Mandatory server-side verification request
+      const verifyRes = await fetch('/api/orders/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: localOrder.id,
+          razorpayOrderId,
+          razorpayPaymentId,
+          razorpaySignature,
+        }),
+      });
+
+      if (verifyRes.ok) {
+        const verifyData = await verifyRes.json();
+        if (verifyData.success && verifyData.webhookVerified && verifyData.downloadToken) {
+          serverVerified = true;
+          verifiedDownloadToken = verifyData.downloadToken;
+          serverOrderNumber = verifyData.orderNumber || serverOrderNumber;
+        } else if (verifyData.error) {
+          throw new Error(verifyData.error);
+        }
+      } else {
+        const errJson = await verifyRes.json().catch(() => null);
+        throw new Error(errJson?.error || 'Server rejected payment verification.');
+      }
+
+      // If webhook has a slight delivery latency, poll server status endpoint
+      if (!serverVerified) {
+        for (let attempt = 0; attempt < 4; attempt++) {
+          await new Promise((res) => setTimeout(res, 1000));
+          const statusRes = await fetch(`/api/orders/status/${localOrder.id}`);
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (statusData.isPaid && statusData.webhookVerified && statusData.downloadToken) {
+              serverVerified = true;
+              verifiedDownloadToken = statusData.downloadToken;
+              serverOrderNumber = statusData.orderNumber || serverOrderNumber;
+              break;
+            }
+          }
+        }
+      }
+
+      // STRICT PROTECTION: If server did not verify via webhook, PREVENT CLIENT-SIDE BYPASS!
+      if (!serverVerified || !verifiedDownloadToken) {
+        throw new Error(
+          'Access Denied: Payment has not been verified by Razorpay webhook on the server. Client-side bypass prevented. PDF download access blocked.'
+        );
+      }
+
+      // 2. Mark order as verified and paid locally ONLY with verified server download token
+      const confirmedOrder = markOrderPaid(localOrder.id, razorpayPaymentId, verifiedDownloadToken, true);
 
       // Trigger celebration confetti
       try {
@@ -182,14 +208,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setShowSimulatorModal(null);
 
       // 3. ONLY now share the PDF by calling onSuccess with the confirmed order
-      onSuccess(confirmedOrder || { ...localOrder, status: 'paid', razorpayPaymentId });
+      onSuccess(
+        confirmedOrder || {
+          ...localOrder,
+          status: 'paid',
+          webhookVerified: true,
+          orderNumber: serverOrderNumber,
+          razorpayPaymentId,
+          downloadToken: verifiedDownloadToken,
+        }
+      );
     } catch (err: any) {
       console.error('Payment confirmation error:', err);
       setIsProcessing(false);
       setIsVerifying(false);
       setShowSimulatorModal(null);
       setErrorMsg(
-        err.message || 'Payment confirmation failed. PDFs cannot be shared without verified payment.'
+        err.message || 'Payment confirmation failed. PDFs cannot be shared without verified Razorpay webhook confirmation.'
       );
     }
   };
@@ -659,18 +694,44 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div className="pt-2 space-y-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    const simPaymentId = `pay_rzp_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
-                    completePaymentVerification(
-                      showSimulatorModal.order,
-                      showSimulatorModal.order.razorpayOrderId,
-                      simPaymentId
-                    );
+                  onClick={async () => {
+                    setIsVerifying(true);
+                    setErrorMsg(null);
+                    try {
+                      const simPaymentId = `pay_sim_${Date.now()}`;
+                      // Dispatch real server-side webhook simulation
+                      const simRes = await fetch('/api/razorpay/webhook/simulate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          orderId: showSimulatorModal.order.id,
+                          razorpayPaymentId: simPaymentId,
+                        }),
+                      });
+
+                      const simData = await simRes.json();
+                      if (!simRes.ok || !simData.success || !simData.order?.webhookVerified || !simData.order?.downloadToken) {
+                        throw new Error(simData.error || 'Server webhook simulation rejected. Access denied.');
+                      }
+
+                      // Complete verification with server-verified order data
+                      await completePaymentVerification(
+                        showSimulatorModal.order,
+                        showSimulatorModal.order.razorpayOrderId,
+                        simPaymentId,
+                        undefined,
+                        simData.order.downloadToken
+                      );
+                    } catch (simErr: any) {
+                      setIsProcessing(false);
+                      setIsVerifying(false);
+                      setErrorMsg(simErr.message || 'Server webhook verification failed.');
+                    }
                   }}
                   className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Authorize &amp; Confirm Payment (Unlock PDF)</span>
+                  <span>Confirm via Server Webhook &amp; Unlock PDFs</span>
                 </button>
 
                 <button

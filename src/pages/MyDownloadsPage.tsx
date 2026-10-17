@@ -23,6 +23,7 @@ export const MyDownloadsPage: React.FC = () => {
   const [searchedOrders, setSearchedOrders] = useState<Order[] | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     updatePageSEO({
@@ -48,8 +49,9 @@ export const MyDownloadsPage: React.FC = () => {
   const performSearch = (email: string) => {
     const clean = email.trim();
     if (!clean) return;
+    setDownloadError(null);
     const results = getOrdersByEmail(clean).filter(
-      (o) => o.status === 'paid' && Boolean(o.razorpayPaymentId)
+      (o) => o.status === 'paid' && Boolean(o.downloadToken)
     );
     setSearchedOrders(results);
     setHasSearched(true);
@@ -61,8 +63,9 @@ export const MyDownloadsPage: React.FC = () => {
   };
 
   const handleDownload = async (ord: Order, productId: string, title: string) => {
-    if (ord.status !== 'paid' || !ord.razorpayPaymentId) {
-      alert('⚠️ Access Denied: Printable PDFs can only be downloaded after verified Razorpay payment.');
+    setDownloadError(null);
+    if (ord.status !== 'paid' || !ord.downloadToken) {
+      setDownloadError('⚠️ Access Denied: Printable PDFs can only be downloaded after verified Razorpay webhook confirmation.');
       return;
     }
 
@@ -91,9 +94,13 @@ export const MyDownloadsPage: React.FC = () => {
         createdAt: new Date().toISOString(),
       };
 
-      await downloadProduct(prod, 'Little Artist');
-    } catch (err) {
+      // Strict server authorization call with downloadToken
+      await downloadProduct(prod, 'Little Artist', ord.downloadToken);
+    } catch (err: any) {
       console.error(err);
+      setDownloadError(
+        err.message || 'Server authorization failed: Payment has not been verified by Razorpay webhook.'
+      );
     } finally {
       setDownloadingId(null);
     }
@@ -144,6 +151,17 @@ export const MyDownloadsPage: React.FC = () => {
           </button>
         </form>
 
+        {/* Error Banner */}
+        {downloadError && (
+          <div className="p-4 bg-red-50 border-2 border-red-300 rounded-2xl text-xs text-red-900 font-bold flex items-start gap-2.5 animate-in fade-in">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-extrabold">Download Access Denied by Server</p>
+              <p className="text-[11px] font-medium text-red-700 mt-0.5">{downloadError}</p>
+            </div>
+          </div>
+        )}
+
         {/* Results Area */}
         {hasSearched && (
           <div className="pt-6 border-t border-neutral-100 space-y-4">
@@ -165,9 +183,12 @@ export const MyDownloadsPage: React.FC = () => {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs font-extrabold pb-2 border-b border-amber-200/60">
                         <span className="text-neutral-900">Order #{ord.orderNumber}</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-[11px] font-mono text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full flex items-center gap-1">
                             <ShieldCheck className="w-3 h-3 text-emerald-700" />
-                            <span>Paid via Razorpay</span>
+                            <span>Webhook Verified</span>
+                          </span>
+                          <span className="text-[11px] font-mono text-emerald-800 bg-white border border-emerald-200 px-2 py-0.5 rounded-md">
+                            {ord.razorpayPaymentId}
                           </span>
                           <span className="text-neutral-500 font-bold">
                             {new Date(ord.createdAt).toLocaleDateString()}

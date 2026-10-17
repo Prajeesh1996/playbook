@@ -89,6 +89,8 @@ export interface Order {
   razorpayOrderId: string;
   razorpayPaymentId?: string;
   status: 'pending' | 'paid' | 'failed' | 'refunded';
+  webhookVerified?: boolean;
+  verifiedAt?: string;
   downloadToken: string;
   tokenExpiresAt: string;
   createdAt: string;

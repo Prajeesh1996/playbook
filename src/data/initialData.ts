@@ -123,6 +123,62 @@ export const CATEGORIES_DATA: CategoryInfo[] = [
 
 export const INITIAL_PRODUCTS: Product[] = [
   {
+    id: 'prod-playbook-100',
+    title: "The Ultimate Kids' Activity Playbook (100-Page Comprehensive Edition)",
+    slug: 'ultimate-kids-activity-playbook-100-pages',
+    category: 'School Activity Packs',
+    ageGroup: 'Ages 3–6',
+    pageCount: 100,
+    fileFormat: 'Printable PDF (A4)',
+    fileSizeMb: 24.5,
+    originalPrice: 249,
+    discountedPrice: 49,
+    rating: 5.0,
+    reviewsCount: 428,
+    isFeatured: true,
+    isBestSeller: true,
+    badgeText: '🌟 100-PAGE PLAYBOOK',
+    themeColor: '#FF6B6B',
+    description:
+      "A complete, print-ready early childhood learning playbook covering all 18 activity categories: Alphabet Learning (A–Z), Numbers and Counting (1–100), Shapes and Colors, Tracing and Pre-writing, Cute Animal & Bird Colouring, Healthy Fruits & Vegetables, Shadow Matching, Mazes & Labyrinths, Spot the Difference, Dot-to-Dot, Logical Thinking Sequences, Memory Observation, Basic Mathematics & Addition, Creative Drawing Prompts, Good Daily Habits, Nature & Life Cycles, Fun Educational Games, Answer Keys, and a personalized Super Artist Certificate of Completion.",
+    shortDescription: '100 pages covering all 18 foundational preschool learning categories with print-ready activities and answer keys.',
+    learningOutcomes: [
+      'Mastery of A–Z alphabet recognition and phonics foundations',
+      'Number tracing, counting from 1 to 100, and visual addition',
+      'Spatial reasoning and problem-solving through mazes and spot-the-difference',
+      'Fine motor muscle control and pencil grip through progressive line tracing',
+      'Cognitive memory, pattern completion, and daily positive habits',
+    ],
+    samplePages: [
+      {
+        pageNumber: 1,
+        title: 'Alphabet Fun: Letter A & Phonics Apple',
+        description: 'Large hollow letter for finger and crayon tracing, plus phonics coloring illustration.',
+        previewSvgType: 'alphabet',
+      },
+      {
+        pageNumber: 2,
+        title: 'Numbers & Counting: 1 to 10 Balloon Fiesta',
+        description: 'Count the smiling party balloons, trace numbers, and color each balloon by number code.',
+        previewSvgType: 'numbers',
+      },
+      {
+        pageNumber: 3,
+        title: 'Honeybee Maze Adventure',
+        description: 'Help Buzzy the Bee navigate through the sunflower garden maze to find the sweet honey jar.',
+        previewSvgType: 'shapes',
+      },
+      {
+        pageNumber: 4,
+        title: 'Spot 5 Differences in the Park',
+        description: 'Compare two playful puppy scenes to sharpen visual observation and focus skills.',
+        previewSvgType: 'lion',
+      },
+    ],
+    active: true,
+    createdAt: new Date().toISOString(),
+  },
+  {
     id: 'prod-1',
     title: 'Animal Colouring Book',
     slug: 'animal-colouring-book',
