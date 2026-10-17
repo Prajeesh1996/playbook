@@ -1,6 +1,21 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      // Ignore disabled HMR WebSocket reconnection errors in sandbox environment
+      window.addEventListener('error', function(e) {
+        if (e.message && (e.message.includes('WebSocket') || e.message.includes('ws'))) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        if (e.reason && (String(e.reason.message || e.reason).includes('WebSocket') || String(e.reason).includes('ws'))) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      });
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Little Colour World – Printable Colouring Books &amp; Worksheets for Kids</title>
