@@ -11,7 +11,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Download,
 } from 'lucide-react';
+import { generateProductPDF } from '../utils/pdfGenerator';
 import { PreviewArtworkPicker } from '../utils/illustrations';
 
 interface ProductDetailModalProps {
@@ -239,21 +241,32 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <button
-                  onClick={() => onAddToCart(product)}
-                  className="py-3.5 px-4 rounded-2xl bg-amber-100 hover:bg-amber-200 text-neutral-900 font-extrabold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer border border-amber-300"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>Add to Cart</span>
-                </button>
+              <div className="space-y-2.5 pt-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => onAddToCart(product)}
+                    className="py-3.5 px-4 rounded-2xl bg-amber-100 hover:bg-amber-200 text-neutral-900 font-extrabold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer border border-amber-300"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>Add to Cart</span>
+                  </button>
+
+                  <button
+                    onClick={() => onBuyNow(product)}
+                    className="py-3.5 px-4 rounded-2xl bg-[#FFD93D] hover:bg-[#ffdf59] text-neutral-900 font-extrabold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer border-2 border-amber-400"
+                  >
+                    <Zap className="w-4 h-4 fill-current text-amber-700" />
+                    <span>Buy Now (Instant)</span>
+                  </button>
+                </div>
 
                 <button
-                  onClick={() => onBuyNow(product)}
-                  className="py-3.5 px-4 rounded-2xl bg-[#FFD93D] hover:bg-[#ffdf59] text-neutral-900 font-extrabold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer border-2 border-amber-400"
+                  onClick={() => generateProductPDF(product, 'Little Artist')}
+                  className="w-full py-2.5 px-4 rounded-2xl bg-white hover:bg-amber-50/60 text-neutral-800 font-extrabold text-xs flex items-center justify-center gap-2 border border-amber-200 transition-colors cursor-pointer shadow-2xs"
+                  title="Generate and download the complete PDF workbook"
                 >
-                  <Zap className="w-4 h-4 fill-current text-amber-700" />
-                  <span>Buy Now (Instant)</span>
+                  <Download className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Download Full PDF ({product.pageCount} Pages • {product.category})</span>
                 </button>
               </div>
             </div>

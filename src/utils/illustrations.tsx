@@ -376,6 +376,201 @@ export const LineArtVehicle: React.FC<{ className?: string; isColoured?: boolean
   </svg>
 );
 
+export const LineArtBirds: React.FC<{ className?: string; isColoured?: boolean }> = ({ className = '', isColoured = false }) => (
+  <svg viewBox="0 0 300 300" className={`w-full h-full ${className}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Friendly Owl on branch */}
+    <g transform="translate(60, 40)">
+      {/* Branch */}
+      <path d="M10 190 Q 90 180 170 190" stroke="#8D6E63" strokeWidth="10" strokeLinecap="round" />
+      {/* Body */}
+      <ellipse cx="90" cy="110" rx="60" ry="68" fill={isColoured ? '#CDB4FF' : '#FFFFFF'} stroke="#222222" strokeWidth="4" />
+      {/* Belly */}
+      <ellipse cx="90" cy="125" rx="38" ry="42" fill={isColoured ? '#FFF9D2' : '#FFFFFF'} stroke="#222222" strokeWidth="2.5" />
+      {/* Big Eyes */}
+      <circle cx="65" cy="80" r="22" fill="#FFFFFF" stroke="#222222" strokeWidth="3" />
+      <circle cx="115" cy="80" r="22" fill="#FFFFFF" stroke="#222222" strokeWidth="3" />
+      <circle cx="68" cy="80" r="10" fill="#222222" />
+      <circle cx="112" cy="80" r="10" fill="#222222" />
+      <circle cx="70" cy="77" r="3" fill="#FFFFFF" />
+      <circle cx="114" cy="77" r="3" fill="#FFFFFF" />
+      {/* Beak */}
+      <polygon points="90,92 84,106 96,106" fill={isColoured ? '#FF8A65' : '#FFFFFF'} stroke="#222222" strokeWidth="2" />
+      {/* Nightcap / tufts */}
+      <path d="M40 50 L55 65" stroke="#222222" strokeWidth="4" strokeLinecap="round" />
+      <path d="M140 50 L125 65" stroke="#222222" strokeWidth="4" strokeLinecap="round" />
+      {/* Feet */}
+      <circle cx="75" cy="180" r="5" fill={isColoured ? '#FF8A65' : '#222222'} />
+      <circle cx="105" cy="180" r="5" fill={isColoured ? '#FF8A65' : '#222222'} />
+    </g>
+    <text x="150" y="270" textAnchor="middle" fill="#555555" fontSize="20" fontWeight="700" fontFamily="sans-serif">
+      Chirpy Garden Owl
+    </text>
+  </svg>
+);
+
+export const LineArtShapes: React.FC<{ className?: string; isColoured?: boolean }> = ({ className = '', isColoured = false }) => (
+  <svg viewBox="0 0 300 300" className={`w-full h-full ${className}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Geometric Friends */}
+    <g transform="translate(30, 40)">
+      {/* Smiling Circle */}
+      <circle cx="60" cy="70" r="38" fill={isColoured ? '#FFD93D' : '#FFFFFF'} stroke="#222222" strokeWidth="4" />
+      <circle cx="50" cy="65" r="4" fill="#222222" />
+      <circle cx="70" cy="65" r="4" fill="#222222" />
+      <path d="M52 78 Q 60 86 68 78" stroke="#222222" strokeWidth="2.5" strokeLinecap="round" />
+
+      {/* Cheerful Star */}
+      <g transform="translate(140, 20)">
+        <polygon points="40,5 49,28 74,30 55,46 62,70 40,56 18,70 25,46 6,30 31,28" fill={isColoured ? '#FF8A65' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+        <circle cx="34" cy="36" r="3" fill="#222222" />
+        <circle cx="46" cy="36" r="3" fill="#222222" />
+      </g>
+
+      {/* Happy Square */}
+      <rect x="25" y="130" width="70" height="70" rx="8" fill={isColoured ? '#6BCBFF' : '#FFFFFF'} stroke="#222222" strokeWidth="4" />
+      <circle cx="50" cy="155" r="4" fill="#222222" />
+      <circle cx="70" cy="155" r="4" fill="#222222" />
+      <path d="M52 172 Q 60 180 68 172" stroke="#222222" strokeWidth="2.5" strokeLinecap="round" />
+
+      {/* Playful Triangle */}
+      <polygon points="180,130 140,200 220,200" fill={isColoured ? '#48BB78' : '#FFFFFF'} stroke="#222222" strokeWidth="4" />
+      <circle cx="173" cy="168" r="4" fill="#222222" />
+      <circle cx="187" cy="168" r="4" fill="#222222" />
+      <path d="M174 180 Q 180 186 186 180" stroke="#222222" strokeWidth="2.5" strokeLinecap="round" />
+    </g>
+    <text x="150" y="270" textAnchor="middle" fill="#555555" fontSize="20" fontWeight="700" fontFamily="sans-serif">
+      Shapes &amp; Colours
+    </text>
+  </svg>
+);
+
+export const LineArtTracing: React.FC<{ className?: string; isColoured?: boolean }> = ({ className = '', isColoured = false }) => (
+  <svg viewBox="0 0 300 300" className={`w-full h-full ${className}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Bunny tracing trail to carrot */}
+    <g transform="translate(30, 40)">
+      {/* Bunny on left */}
+      <ellipse cx="40" cy="80" rx="20" ry="18" fill={isColoured ? '#EDE9FE' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+      <ellipse cx="32" cy="50" rx="6" ry="16" fill={isColoured ? '#FFB6C1' : '#FFFFFF'} stroke="#222222" strokeWidth="2.5" />
+      <ellipse cx="46" cy="50" rx="6" ry="16" fill={isColoured ? '#FFB6C1' : '#FFFFFF'} stroke="#222222" strokeWidth="2.5" />
+      <circle cx="36" cy="76" r="2.5" fill="#222222" />
+      <circle cx="44" cy="76" r="2.5" fill="#222222" />
+
+      {/* Dotted Wave Path */}
+      <path d="M65 80 Q 100 40 135 80 T 205 80" stroke="#3B82F6" strokeWidth="4" strokeDasharray="6 6" fill="none" />
+
+      {/* Carrot on right */}
+      <polygon points="215,75 240,65 240,85" fill={isColoured ? '#EA580C' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+      <path d="M240 75 L255 70 M240 75 L255 75 M240 75 L255 80" stroke="#16A34A" strokeWidth="2.5" />
+
+      {/* Additional Tracing Tracks */}
+      <path d="M20 140 L 230 140" stroke="#8B5CF6" strokeWidth="3.5" strokeDasharray="5 5" />
+      <path d="M20 180 L 50 160 L 80 180 L 110 160 L 140 180 L 170 160 L 200 180 L 230 160" stroke="#10B981" strokeWidth="3.5" strokeDasharray="5 5" fill="none" />
+    </g>
+    <text x="150" y="260" textAnchor="middle" fill="#555555" fontSize="20" fontWeight="700" fontFamily="sans-serif">
+      Pencil Line Control
+    </text>
+  </svg>
+);
+
+export const LineArtFestivals: React.FC<{ className?: string; isColoured?: boolean }> = ({ className = '', isColoured = false }) => (
+  <svg viewBox="0 0 300 300" className={`w-full h-full ${className}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Sparkling Diya Lamp */}
+    <g transform="translate(60, 50)">
+      {/* Glowing Teardrop Flame */}
+      <path d="M90 20 C 105 50 105 70 90 70 C 75 70 75 50 90 20 Z" fill={isColoured ? '#F59E0B' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+      <path d="M90 40 C 98 55 98 65 90 65 C 82 65 82 55 90 40 Z" fill={isColoured ? '#FFD93D' : '#FFFFFF'} />
+      {/* Light Rays */}
+      <line x1="90" y1="10" x2="90" y2="2" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="72" y1="18" x2="65" y2="12" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="108" y1="18" x2="115" y2="12" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Diya Clay Bowl */}
+      <path d="M40 75 C 40 120 140 120 140 75 Z" fill={isColoured ? '#EA580C' : '#FFFFFF'} stroke="#222222" strokeWidth="4" />
+      {/* Decorative Base & Rangoli Arcs */}
+      <path d="M20 130 Q 90 115 160 130" stroke="#EC4899" strokeWidth="4" fill="none" />
+      <circle cx="50" cy="140" r="7" fill={isColoured ? '#FFD93D' : '#FFFFFF'} stroke="#222222" strokeWidth="2" />
+      <circle cx="90" cy="145" r="7" fill={isColoured ? '#10B981' : '#FFFFFF'} stroke="#222222" strokeWidth="2" />
+      <circle cx="130" cy="140" r="7" fill={isColoured ? '#3B82F6' : '#FFFFFF'} stroke="#222222" strokeWidth="2" />
+    </g>
+    <text x="150" y="260" textAnchor="middle" fill="#555555" fontSize="20" fontWeight="700" fontFamily="sans-serif">
+      Sparkling Festive Diya
+    </text>
+  </svg>
+);
+
+export const LineArtCartoon: React.FC<{ className?: string; isColoured?: boolean }> = ({ className = '', isColoured = false }) => (
+  <svg viewBox="0 0 300 300" className={`w-full h-full ${className}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Whimsical Friendly Cartoon Monster & Star */}
+    <g transform="translate(60, 30)">
+      {/* Soft Striped Horns */}
+      <path d="M40 50 C 30 20 50 10 55 20 C 60 30 50 45 48 50 Z" fill={isColoured ? '#F59E0B' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+      <path d="M140 50 C 150 20 130 10 125 20 C 120 30 130 45 132 50 Z" fill={isColoured ? '#F59E0B' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+      {/* Monster Body */}
+      <ellipse cx="90" cy="120" rx="60" ry="70" fill={isColoured ? '#A78BFA' : '#FFFFFF'} stroke="#222222" strokeWidth="4" />
+      {/* Inner Belly */}
+      <ellipse cx="90" cy="135" rx="36" ry="42" fill={isColoured ? '#DDD6FE' : '#FFFFFF'} stroke="#222222" strokeWidth="2.5" />
+      {/* Belly Polka Dots */}
+      <circle cx="80" cy="125" r="4" fill={isColoured ? '#8B5CF6' : '#222222'} />
+      <circle cx="102" cy="132" r="5" fill={isColoured ? '#EC4899' : '#222222'} />
+      <circle cx="85" cy="150" r="4.5" fill={isColoured ? '#10B981' : '#222222'} />
+      {/* Three Cheerful Eyes */}
+      <circle cx="65" cy="85" r="12" fill="#FFFFFF" stroke="#222222" strokeWidth="3" />
+      <circle cx="67" cy="86" r="5" fill="#222222" />
+      <circle cx="90" cy="75" r="14" fill="#FFFFFF" stroke="#222222" strokeWidth="3" />
+      <circle cx="92" cy="76" r="6" fill="#222222" />
+      <circle cx="115" cy="85" r="12" fill="#FFFFFF" stroke="#222222" strokeWidth="3" />
+      <circle cx="113" cy="86" r="5" fill="#222222" />
+      {/* Wide Friendly Smile with 2 Little Fangs */}
+      <path d="M68 105 Q 90 125 112 105" stroke="#222222" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+      <polygon points="76,108 82,108 79,115" fill="#FFFFFF" stroke="#222222" strokeWidth="2" />
+      <polygon points="98,108 104,108 101,115" fill="#FFFFFF" stroke="#222222" strokeWidth="2" />
+      {/* Waving Hands */}
+      <path d="M30 115 C 10 100 15 80 25 90 C 35 100 32 115 32 120" stroke="#222222" strokeWidth="3.5" fill={isColoured ? '#A78BFA' : '#FFFFFF'} />
+      <path d="M150 115 C 170 100 165 80 155 90 C 145 100 148 115 148 120" stroke="#222222" strokeWidth="3.5" fill={isColoured ? '#A78BFA' : '#FFFFFF'} />
+      {/* Chubby Feet */}
+      <ellipse cx="65" cy="190" rx="18" ry="10" fill={isColoured ? '#8B5CF6' : '#FFFFFF'} stroke="#222222" strokeWidth="3.5" />
+      <ellipse cx="115" cy="190" rx="18" ry="10" fill={isColoured ? '#8B5CF6' : '#FFFFFF'} stroke="#222222" strokeWidth="3.5" />
+    </g>
+    <text x="150" y="270" textAnchor="middle" fill="#555555" fontSize="20" fontWeight="700" fontFamily="sans-serif">
+      Friendly Whimsical Monster
+    </text>
+  </svg>
+);
+
+export const LineArtNursery: React.FC<{ className?: string; isColoured?: boolean }> = ({ className = '', isColoured = false }) => (
+  <svg viewBox="0 0 300 300" className={`w-full h-full ${className}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Nursery Activity: Teddy & Balloon Counting Match */}
+    <g transform="translate(35, 30)">
+      {/* Cheerful Floating Balloons */}
+      <g transform="translate(130, 10)">
+        <ellipse cx="25" cy="30" rx="20" ry="25" fill={isColoured ? '#FF8A65' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+        <polygon points="22,55 28,55 25,60" fill={isColoured ? '#FF8A65' : '#FFFFFF'} stroke="#222222" strokeWidth="2" />
+        <ellipse cx="65" cy="35" rx="18" ry="24" fill={isColoured ? '#6BCBFF' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+        <polygon points="62,59 68,59 65,64" fill={isColoured ? '#6BCBFF' : '#FFFFFF'} stroke="#222222" strokeWidth="2" />
+        <ellipse cx="45" cy="15" rx="18" ry="22" fill={isColoured ? '#FFD93D' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+        <path d="M25 60 Q 30 110 50 140" stroke="#888888" strokeWidth="2" fill="none" />
+        <path d="M65 64 Q 60 110 50 140" stroke="#888888" strokeWidth="2" fill="none" />
+        <path d="M45 37 Q 48 100 50 140" stroke="#888888" strokeWidth="2" fill="none" />
+      </g>
+      {/* Cute Little Bear Holding Strings */}
+      <g transform="translate(15, 60)">
+        <ellipse cx="60" cy="100" rx="32" ry="36" fill={isColoured ? '#FBBF24' : '#FFFFFF'} stroke="#222222" strokeWidth="3.5" />
+        <circle cx="60" cy="55" rx="28" fill={isColoured ? '#FBBF24' : '#FFFFFF'} stroke="#222222" strokeWidth="3.5" />
+        <circle cx="36" cy="35" r="10" fill={isColoured ? '#FBBF24' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+        <circle cx="84" cy="35" r="10" fill={isColoured ? '#FBBF24' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+        <ellipse cx="60" cy="62" rx="12" ry="9" fill="#FFFFFF" stroke="#222222" strokeWidth="2" />
+        <circle cx="50" cy="50" r="3" fill="#222222" />
+        <circle cx="70" cy="50" r="3" fill="#222222" />
+        <ellipse cx="60" cy="59" rx="4" ry="2.5" fill="#222222" />
+        <path d="M57 65 Q 60 68 63 65" stroke="#222222" strokeWidth="2" fill="none" />
+        <ellipse cx="42" cy="135" rx="12" ry="7" fill={isColoured ? '#D97706' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+        <ellipse cx="78" cy="135" rx="12" ry="7" fill={isColoured ? '#D97706' : '#FFFFFF'} stroke="#222222" strokeWidth="3" />
+      </g>
+    </g>
+    <text x="150" y="270" textAnchor="middle" fill="#555555" fontSize="20" fontWeight="700" fontFamily="sans-serif">
+      Nursery Activity Play
+    </text>
+  </svg>
+);
+
 export const PreviewArtworkPicker: React.FC<{ type: string; isColoured?: boolean; className?: string }> = ({
   type,
   isColoured = false,
@@ -394,7 +589,20 @@ export const PreviewArtworkPicker: React.FC<{ type: string; isColoured?: boolean
       return <LineArtFruits className={className} isColoured={isColoured} />;
     case 'vehicle':
       return <LineArtVehicle className={className} isColoured={isColoured} />;
+    case 'birds':
+      return <LineArtBirds className={className} isColoured={isColoured} />;
+    case 'shapes':
+      return <LineArtShapes className={className} isColoured={isColoured} />;
+    case 'tracing':
+      return <LineArtTracing className={className} isColoured={isColoured} />;
+    case 'festivals':
+      return <LineArtFestivals className={className} isColoured={isColoured} />;
+    case 'cartoon':
+      return <LineArtCartoon className={className} isColoured={isColoured} />;
+    case 'nursery':
+      return <LineArtNursery className={className} isColoured={isColoured} />;
     default:
       return <LineArtLion className={className} isColoured={isColoured} />;
   }
 };
+

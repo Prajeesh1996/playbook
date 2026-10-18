@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Product, ProductCategory, AgeGroup, Coupon } from '../types';
+import { generateProductPDF } from '../utils/pdfGenerator';
 import {
   X,
   Plus,
@@ -524,15 +525,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                         </td>
                         <td className="py-3 px-4 text-right space-x-1">
                           <button
+                            onClick={() => generateProductPDF(p, 'Little Explorer')}
+                            className="p-1.5 text-neutral-500 hover:text-sky-700 hover:bg-sky-50 rounded-lg cursor-pointer"
+                            title={`Download & Inspect Complete PDF (${p.pageCount} Pages)`}
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                          <button
                             onClick={() => handleOpenEdit(p)}
-                            className="p-1.5 text-neutral-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg"
+                            className="p-1.5 text-neutral-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg cursor-pointer"
                             title="Edit"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => deleteProduct(p.id)}
-                            className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                            className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer"
                             title="Delete"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

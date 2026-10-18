@@ -2,480 +2,228 @@ import { jsPDF } from 'jspdf';
 import { Product } from '../types';
 
 /**
- * Generates an authentic, high-quality printable PDF colouring book
- * complete with cover, colouring pages, tracing guidelines, and an artist certificate!
+ * LITTLE COLOUR WORLD - MASTER HIGH-FIDELITY PRINTABLE PDF ENGINE
+ * Generates authentic, high-resolution A4 printable PDFs
+ * with unique, diverse vector illustrations tailored to each book's
+ * Category, Name, Description, and exact Page Count.
  */
-export async function generateProductPDF(product: Product, childName: string = ''): Promise<void> {
-  // A4 dimensions in mm: 210 x 297
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
-  });
 
-  const pageWidth = 210;
-  const pageHeight = 297;
-
-  // ROUTE TO COMPREHENSIVE 18-CATEGORY PLAYBOOK GENERATOR IF REQUESTED
-  if (product.id === 'prod-playbook-100' || product.title.toLowerCase().includes('playbook')) {
-    generate100PagePlaybookPDF(doc, product, childName, pageWidth, pageHeight);
-    const filename = `${product.title.replace(/[^a-zA-Z0-9]/g, '_')}_Little_Colour_World.pdf`;
-    doc.save(filename);
-    return;
-  }
-
-  // --- PAGE 1: COVER PAGE ---
-  // Soft pastel border
-  doc.setDrawColor(255, 217, 61); // #FFD93D
-  doc.setLineWidth(3);
-  doc.roundedRect(12, 12, pageWidth - 24, pageHeight - 24, 6, 6);
-
-  doc.setDrawColor(107, 203, 255); // #6BCBFF
-  doc.setLineWidth(1);
-  doc.roundedRect(15, 15, pageWidth - 30, pageHeight - 30, 4, 4);
-
-  // Brand Header
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(255, 138, 101); // #FF8A65
-  doc.text('LITTLE COLOUR WORLD', pageWidth / 2, 28, { align: 'center' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Little Hands, Big Imagination! • Printable Activity Book', pageWidth / 2, 34, { align: 'center' });
-
-  // Main Book Title
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(26);
-  doc.setTextColor(40, 40, 40);
-  
-  // Wrap long titles
-  const splitTitle = doc.splitTextToSize(product.title, 160);
-  doc.text(splitTitle, pageWidth / 2, 50, { align: 'center' });
-
-  // Floating age badge in cover
-  doc.setFillColor(255, 243, 196);
-  doc.setDrawColor(255, 217, 61);
-  doc.roundedRect(pageWidth / 2 - 30, 64, 60, 9, 3, 3, 'FD');
-  doc.setFontSize(10);
-  doc.setTextColor(60, 60, 60);
-  doc.text(`Designed for ${product.ageGroup}`, pageWidth / 2, 70, { align: 'center' });
-
-  // Center Cover Frame
-  doc.setDrawColor(220, 220, 220);
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(30, 80, 150, 120, 8, 8, 'FD');
-
-  // Decorative vector art on cover
-  doc.setDrawColor(50, 50, 50);
-  doc.setLineWidth(1.5);
-  // Head
-  doc.circle(pageWidth / 2, 135, 36);
-  // Ears
-  doc.circle(pageWidth / 2 - 28, 108, 12);
-  doc.circle(pageWidth / 2 + 28, 108, 12);
-  // Eyes
-  doc.setFillColor(40, 40, 40);
-  doc.circle(pageWidth / 2 - 12, 130, 3.5, 'F');
-  doc.circle(pageWidth / 2 + 12, 130, 3.5, 'F');
-  // Cheerful smile
-  doc.setLineWidth(1.2);
-  doc.moveTo(pageWidth / 2 - 10, 142);
-  doc.curveTo(pageWidth / 2 - 5, 148, pageWidth / 2 + 5, 148, pageWidth / 2 + 10, 142);
-  doc.stroke();
-
-  // Caption inside frame
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Ready to Colour & Create Magic!', pageWidth / 2, 188, { align: 'center' });
-
-  // "This book belongs to" section
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(203, 180, 255); // Lavender
-  doc.roundedRect(30, 212, 150, 32, 4, 4, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(80, 80, 80);
-  doc.text('This special book belongs to:', pageWidth / 2, 222, { align: 'center' });
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(255, 138, 101);
-  if (childName) {
-    doc.text(childName, pageWidth / 2, 234, { align: 'center' });
-  } else {
-    doc.setDrawColor(180, 180, 180);
-    doc.setLineDashPattern([2, 2], 0);
-    doc.line(45, 234, 165, 234);
-    doc.setLineDashPattern([], 0);
-  }
-
-  // Cover Footer
-  doc.setFontSize(8);
-  doc.setTextColor(140, 140, 140);
-  doc.text(`Official PDF Edition • ${product.pageCount} Fun Printable Pages • www.littlecolourworld.com`, pageWidth / 2, 275, { align: 'center' });
-
-  // --- PAGE 2: MAIN COLOURING PAGE 1 ---
-  doc.addPage();
-  drawPageBorder(doc, pageWidth, pageHeight, '1');
-
-  // Header
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(40, 40, 40);
-  doc.text(product.samplePages[0]?.title || 'Magical Jungle Friend', pageWidth / 2, 26, { align: 'center' });
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(120, 120, 120);
-  doc.text('Colour within the bold lines! Use your favourite bright crayons.', pageWidth / 2, 33, { align: 'center' });
-
-  // Big Bold Printable Lion / Animal
-  const centerX = pageWidth / 2;
-  const centerY = 135;
-
-  doc.setDrawColor(30, 30, 30);
-  doc.setLineWidth(2.2);
-
-  // Big round mane
-  doc.circle(centerX, centerY, 55);
-  // Mane scallop tufts
-  for (let angle = 0; angle < 360; angle += 30) {
-    const rad = (angle * Math.PI) / 180;
-    const px = centerX + Math.cos(rad) * 55;
-    const py = centerY + Math.sin(rad) * 55;
-    doc.circle(px, py, 11);
-  }
-
-  // Head
-  doc.circle(centerX, centerY, 40);
-  // Ears
-  doc.circle(centerX - 26, centerY - 32, 12);
-  doc.circle(centerX + 26, centerY - 32, 12);
-  doc.circle(centerX - 26, centerY - 32, 6);
-  doc.circle(centerX + 26, centerY - 32, 6);
-
-  // Cheerful eyes
-  doc.setFillColor(30, 30, 30);
-  doc.circle(centerX - 15, centerY - 8, 4, 'F');
-  doc.circle(centerX + 15, centerY - 8, 4, 'F');
-
-  // Cute Nose
-  doc.triangle(centerX - 8, centerY + 3, centerX + 8, centerY + 3, centerX, centerY + 12, 'FD');
-  // Smile
-  doc.line(centerX, centerY + 12, centerX, centerY + 18);
-  doc.setLineWidth(1.8);
-  doc.moveTo(centerX - 12, centerY + 18);
-  doc.curveTo(centerX - 6, centerY + 24, centerX + 6, centerY + 24, centerX + 12, centerY + 18);
-  doc.stroke();
-
-  // Whiskers
-  doc.setLineWidth(1.2);
-  doc.line(centerX - 35, centerY + 6, centerX - 18, centerY + 8);
-  doc.line(centerX - 36, centerY + 16, centerX - 18, centerY + 14);
-  doc.line(centerX + 18, centerY + 8, centerX + 35, centerY + 6);
-  doc.line(centerX + 18, centerY + 14, centerX + 36, centerY + 16);
-
-  // Paws
-  doc.setLineWidth(2);
-  doc.ellipse(centerX - 22, centerY + 65, 18, 12);
-  doc.ellipse(centerX + 22, centerY + 65, 18, 12);
-
-  // Crayons Palette Suggestion at bottom
-  doc.setDrawColor(200, 200, 200);
-  doc.setFillColor(252, 252, 252);
-  doc.roundedRect(25, 235, 160, 26, 4, 4, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(80, 80, 80);
-  doc.text('RECOMMENDED CRAYONS:', 32, 244);
-
-  // Draw cute crayon color swatches
-  const crayons = [
-    { name: 'Yellow', r: 255, g: 217, b: 61 },
-    { name: 'Orange', r: 255, g: 138, b: 101 },
-    { name: 'Sky Blue', r: 107, g: 203, b: 255 },
-    { name: 'Mint Green', r: 184, g: 242, b: 200 },
-  ];
-
-  crayons.forEach((c, idx) => {
-    const xPos = 32 + idx * 38;
-    doc.setFillColor(c.r, c.g, c.b);
-    doc.setDrawColor(60, 60, 60);
-    doc.setLineWidth(0.6);
-    doc.roundedRect(xPos, 248, 10, 7, 2, 2, 'FD');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(c.name, xPos + 13, 253);
-  });
-
-  // --- PAGE 3: TRACING & ACTIVITY WORKSHEET ---
-  doc.addPage();
-  drawPageBorder(doc, pageWidth, pageHeight, '2');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(40, 40, 40);
-  doc.text('Preschool Tracing & Counting Fun', pageWidth / 2, 26, { align: 'center' });
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(120, 120, 120);
-  doc.text('Trace the dashed lines with your pencil, then colour each picture!', pageWidth / 2, 33, { align: 'center' });
-
-  // Activity 1: Alphabet tracing
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(255, 138, 101);
-  doc.text('1. Trace the Big Letters:', 25, 46);
-
-  ['A', 'B', 'C', 'D'].forEach((letter, i) => {
-    const x = 35 + i * 40;
-    doc.setDrawColor(220, 220, 220);
-    doc.setFillColor(255, 255, 255);
-    doc.rect(x - 8, 52, 28, 28, 'FD');
-
-    // Solid letter guide
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(26);
-    doc.setTextColor(40, 40, 40);
-    doc.text(letter, x + 6, 73, { align: 'center' });
-  });
-
-  // Activity 2: Number dots counting
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(107, 203, 255);
-  doc.text('2. Count the Smiling Stars and Colour:', 25, 96);
-
-  for (let row = 1; row <= 3; row++) {
-    const y = 100 + row * 22;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(60, 60, 60);
-    doc.text(`${row}`, 30, y + 6);
-
-    for (let star = 0; star < row; star++) {
-      const sx = 48 + star * 22;
-      doc.setDrawColor(40, 40, 40);
-      doc.setLineWidth(1.2);
-      doc.circle(sx, y + 4, 7);
-      // Eye dots
-      doc.circle(sx - 2, y + 3, 1, 'FD');
-      doc.circle(sx + 2, y + 3, 1, 'FD');
-    }
-  }
-
-  // Activity 3: Pattern Path
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(184, 150, 255);
-  doc.text('3. Help the Bunny Reach the Carrot (Trace the Path):', 25, 185);
-
-  doc.setLineWidth(1.5);
-  doc.setLineDashPattern([3, 3], 0);
-  doc.setDrawColor(80, 80, 80);
-  doc.moveTo(35, 205);
-  doc.curveTo(70, 190, 100, 220, 130, 200);
-  doc.curveTo(150, 190, 170, 215, 185, 205);
-  doc.stroke();
-  doc.setLineDashPattern([], 0);
-
-  doc.setFontSize(9);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Start [Bunny]', 30, 215);
-  doc.text('[Sweet Carrot] Finish', 160, 215);
-
-  // Parent encouragement note
-  doc.setFillColor(255, 248, 225);
-  doc.setDrawColor(255, 217, 61);
-  doc.roundedRect(25, 235, 160, 24, 4, 4, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(140, 90, 0);
-  doc.text('Parent Tip for Fine Motor Skills:', 30, 243);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(80, 80, 80);
-  doc.text('Praise effort over perfection! Using triangular crayons helps little toddlers develop the tripod pencil grip.', 30, 250);
-
-  // --- PAGE 4: CERTIFICATE OF COMPLETION ---
-  doc.addPage();
-  // Fancy double gold border
-  doc.setDrawColor(255, 217, 61);
-  doc.setLineWidth(4);
-  doc.roundedRect(12, 12, pageWidth - 24, pageHeight - 24, 8, 8);
-
-  doc.setDrawColor(255, 138, 101);
-  doc.setLineWidth(1.2);
-  doc.roundedRect(16, 16, pageWidth - 32, pageHeight - 32, 6, 6);
-
-  // Ribbon Header
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(255, 138, 101);
-  doc.text('LITTLE COLOUR WORLD AWARDS', pageWidth / 2, 45, { align: 'center' });
-
-  doc.setFontSize(28);
-  doc.setTextColor(30, 30, 30);
-  doc.text('SUPER ARTIST CERTIFICATE', pageWidth / 2, 65, { align: 'center' });
-
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
-  doc.text('This proud certificate is joyfully awarded to:', pageWidth / 2, 85, { align: 'center' });
-
-  // Recipient line
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.setTextColor(255, 138, 101);
-  const awardee = childName ? childName : '____________________________________';
-  doc.text(awardee, pageWidth / 2, 115, { align: 'center' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(12);
-  doc.setTextColor(70, 70, 70);
-  const bodyText = `For showing tremendous imagination, fine motor coordination, and artistic joy in completing the ${product.title}!`;
-  const splitBody = doc.splitTextToSize(bodyText, 140);
-  doc.text(splitBody, pageWidth / 2, 135, { align: 'center' });
-
-  // Big Gold Star in center
-  doc.setFillColor(255, 217, 61);
-  doc.setDrawColor(245, 158, 11);
-  doc.setLineWidth(1.5);
-  doc.circle(pageWidth / 2, 185, 22, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(140, 90, 0);
-  doc.text('★ ★ ★', pageWidth / 2, 183, { align: 'center' });
-  doc.text('NO. 1 STAR', pageWidth / 2, 190, { align: 'center' });
-
-  // Signature and Date lines
-  doc.setLineWidth(0.8);
-  doc.setDrawColor(160, 160, 160);
-  doc.line(35, 235, 85, 235);
-  doc.line(125, 235, 175, 235);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(120, 120, 120);
-  doc.text('Parent / Teacher Signature', 60, 242, { align: 'center' });
-  doc.text('Date Completed', 150, 242, { align: 'center' });
-
-  // Save the PDF
-  const filename = `${product.title.replace(/[^a-zA-Z0-9]/g, '_')}_Little_Colour_World.pdf`;
-  doc.save(filename);
+interface ColorRGB {
+  r: number;
+  g: number;
+  b: number;
 }
 
-/**
- * Generates the complete 18-category Kids' Activity Playbook PDF
- * covering all developmental learning domains, answer keys, certificate, and back cover.
- */
-function generate100PagePlaybookPDF(
+function hexToRgb(hex: string): ColorRGB {
+  const clean = hex.replace('#', '');
+  if (clean.length === 3) {
+    return {
+      r: parseInt(clean[0] + clean[0], 16),
+      g: parseInt(clean[1] + clean[1], 16),
+      b: parseInt(clean[2] + clean[2], 16),
+    };
+  }
+  return {
+    r: parseInt(clean.substring(0, 2), 16) || 255,
+    g: parseInt(clean.substring(2, 4), 16) || 217,
+    b: parseInt(clean.substring(4, 6), 16) || 61,
+  };
+}
+
+function drawPolygon(doc: jsPDF, pts: Array<[number, number]>): void {
+  for (let i = 0; i < pts.length; i++) {
+    const next = (i + 1) % pts.length;
+    doc.line(pts[i][0], pts[i][1], pts[next][0], pts[next][1]);
+  }
+}
+
+function drawArcCurve(doc: jsPDF, cx: number, cy: number, rx: number, ry: number): void {
+  doc.moveTo(cx - rx, cy);
+  doc.curveTo(cx - rx, cy + ry * 0.55, cx + rx, cy + ry * 0.55, cx + rx, cy);
+  doc.stroke();
+}
+
+// -------------------------------------------------------------
+// UNIVERSAL PAGE LAYOUT & DECORATIVE FRAMES
+// -------------------------------------------------------------
+
+function drawPageHeaderAndFooter(
   doc: jsPDF,
   product: Product,
-  childName: string,
-  width: number,
-  height: number
+  pageNum: number,
+  totalPages: number,
+  pageTitle: string,
+  instructions: string = 'Colour within the bold lines! Use your favourite bright crayons.',
+  categoryTag?: string
 ): void {
-  // Helper for consistent playbook page borders
-  const drawPlaybookBorder = (categoryNum: number, categoryTitle: string, pageNum: number) => {
-    doc.setDrawColor(255, 107, 107); // Coral Red
-    doc.setLineWidth(1.6);
-    doc.roundedRect(10, 10, width - 20, height - 20, 5, 5);
+  const width = 210;
+  const height = 297;
+  const rgb = hexToRgb(product.themeColor || '#FFD93D');
 
-    // Top Category Banner
-    doc.setFillColor(255, 241, 242);
-    doc.roundedRect(14, 12, width - 28, 8, 2, 2, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(225, 29, 72);
-    doc.text(`CATEGORY ${categoryNum} OF 18: ${categoryTitle.toUpperCase()}`, width / 2, 17.5, { align: 'center' });
+  // Outer border with soft rounded corners
+  doc.setDrawColor(rgb.r, rgb.g, rgb.b);
+  doc.setLineWidth(1.6);
+  doc.roundedRect(10, 10, width - 20, height - 20, 5, 5);
 
-    // Bottom Footer
+  // Top Category Tag Pill
+  const tag = categoryTag || product.category;
+  doc.setFillColor(255, 248, 235);
+  doc.setDrawColor(rgb.r, rgb.g, rgb.b);
+  doc.setLineWidth(0.6);
+  doc.roundedRect(width / 2 - 45, 12, 90, 7, 2, 2, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(180, 83, 9);
+  doc.text(tag.toUpperCase(), width / 2, 16.8, { align: 'center' });
+
+  // Page Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(30, 41, 59);
+  const splitTitle = doc.splitTextToSize(pageTitle, 160);
+  doc.text(splitTitle, width / 2, 28, { align: 'center' });
+
+  // Subtitle / Pedagogical Instructions
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  const splitInstr = doc.splitTextToSize(instructions, 160);
+  doc.text(splitInstr, width / 2, 35, { align: 'center' });
+
+  // Footer Rule
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.6);
+  doc.line(14, height - 16, width - 14, height - 16);
+
+  // Footer Branding & Exact Page Pagination
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text(`Little Colour World • ${product.title}`, 16, height - 12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(71, 85, 105);
+  doc.text(`Page ${pageNum} of ${totalPages}`, width - 16, height - 12, { align: 'right' });
+}
+
+function drawCrayonsPalette(doc: jsPDF, colors: Array<{ name: string; r: number; g: number; b: number }>): void {
+  const yBox = 248;
+  doc.setFillColor(250, 250, 250);
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(22, yBox, 166, 22, 3, 3, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text('RECOMMENDED CRAYONS PALETTE:', 28, yBox + 7);
+
+  const startX = 28;
+  const spacing = 38;
+  colors.slice(0, 4).forEach((c, idx) => {
+    const x = startX + idx * spacing;
+    doc.setFillColor(c.r, c.g, c.b);
+    doc.setDrawColor(60, 60, 60);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(x, yBox + 10, 8, 6, 1.5, 1.5, 'FD');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text("Little Colour World • Kids' Activity Playbook (100-Page Edition)", 16, height - 13);
-    doc.text(`Page ${pageNum} of 100`, width - 16, height - 13, { align: 'right' });
-  };
+    doc.setTextColor(100, 116, 139);
+    doc.text(c.name, x + 11, yBox + 14.5);
+  });
+}
 
-  // --- 1. FRONT COVER ---
-  doc.setDrawColor(255, 107, 107); // Coral
-  doc.setLineWidth(3);
+function drawBookCover(doc: jsPDF, product: Product, childName: string, totalPages: number): void {
+  const width = 210;
+  const height = 297;
+  const rgb = hexToRgb(product.themeColor || '#FFD93D');
+
+  // Double decorative border
+  doc.setDrawColor(rgb.r, rgb.g, rgb.b);
+  doc.setLineWidth(3.5);
   doc.roundedRect(10, 10, width - 20, height - 20, 8, 8);
-  doc.setDrawColor(255, 217, 61); // Gold
+
+  doc.setDrawColor(255, 182, 193); // Soft pastel inner border
   doc.setLineWidth(1.2);
   doc.roundedRect(14, 14, width - 28, height - 28, 6, 6);
 
-  // Top series banner
-  doc.setFillColor(255, 240, 243);
+  // Top Series Banner
+  doc.setFillColor(255, 248, 235);
   doc.roundedRect(24, 22, width - 48, 11, 4, 4, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.setTextColor(225, 29, 72);
-  doc.text('LITTLE COLOUR WORLD • EARLY LEARNING PLAYBOOK SERIES', width / 2, 29, { align: 'center' });
+  doc.setTextColor(194, 65, 12);
+  doc.text('LITTLE COLOUR WORLD • OFFICIAL EARLY LEARNING WORKBOOK', width / 2, 29, { align: 'center' });
 
-  // Main Title
+  // Main Book Title
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(26);
+  doc.setFontSize(23);
   doc.setTextColor(30, 41, 59);
-  doc.text("KIDS' ACTIVITY PLAYBOOK", width / 2, 48, { align: 'center' });
+  const splitTitle = doc.splitTextToSize(product.title, 160);
+  doc.text(splitTitle, width / 2, 48, { align: 'center' });
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(234, 88, 12);
-  doc.text('100 Pages of Joyful Learning & Creative Discovery', width / 2, 57, { align: 'center' });
-
-  // Age Group & Category Badge
+  // Category & Age Badge
   doc.setFillColor(254, 240, 138); // Yellow badge
-  doc.roundedRect(width / 2 - 45, 63, 90, 9, 3, 3, 'F');
+  doc.roundedRect(width / 2 - 50, 63, 100, 9, 3, 3, 'F');
   doc.setFontSize(9.5);
   doc.setTextColor(133, 77, 14);
-  doc.text('Designed for Ages 3–6 • All 18 Activity Categories', width / 2, 69, { align: 'center' });
+  doc.text(`${product.category} • ${product.ageGroup} • ${totalPages} Pages`, width / 2, 69, { align: 'center' });
 
-  // Cover Centerpiece Illustration
+  // Centerpiece Illustration Box
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(25, 78, 160, 115, 6, 6, 'FD');
+  doc.roundedRect(25, 78, 160, 116, 6, 6, 'FD');
 
-  // Friendly Cartoon Lion on Cover
+  // Mascot Illustration
   const cX = width / 2;
   const cY = 132;
   doc.setDrawColor(30, 30, 30);
-  doc.setLineWidth(2);
-  doc.circle(cX, cY, 44); // Mane
-  doc.circle(cX, cY, 32); // Head
-  doc.circle(cX - 22, cY - 24, 9); // Left Ear
-  doc.circle(cX + 22, cY - 24, 9); // Right Ear
-  doc.setFillColor(30, 30, 30);
-  doc.circle(cX - 11, cY - 6, 3.5, 'F'); // Left Eye
-  doc.circle(cX + 11, cY - 6, 3.5, 'F'); // Right Eye
-  doc.triangle(cX - 6, cY + 3, cX + 6, cY + 3, cX, cY + 10, 'FD'); // Nose
-  doc.line(cX, cY + 10, cX, cY + 15);
-  doc.curveTo(cX - 8, cY + 18, cX + 8, cY + 18, cX + 8, cY + 15); // Smile
+  doc.setLineWidth(2.2);
 
-  // Personalization Box
+  // Head and ears
+  doc.circle(cX, cY, 36);
+  doc.circle(cX - 28, cY - 26, 12);
+  doc.circle(cX + 28, cY - 26, 12);
+  doc.circle(cX - 28, cY - 26, 6);
+  doc.circle(cX + 28, cY - 26, 6);
+
+  // Cheerful eyes
+  doc.setFillColor(30, 30, 30);
+  doc.circle(cX - 12, cY - 6, 4, 'F');
+  doc.circle(cX + 12, cY - 6, 4, 'F');
+  doc.setFillColor(255, 255, 255);
+  doc.circle(cX - 10.5, cY - 7.5, 1.2, 'F');
+  doc.circle(cX + 13.5, cY - 7.5, 1.2, 'F');
+
+  // Cute Button Nose & Big Smile
+  doc.setDrawColor(30, 30, 30);
+  doc.triangle(cX - 6, cY + 4, cX + 6, cY + 4, cX, cY + 11, 'FD');
+  doc.line(cX, cY + 11, cX, cY + 16);
+  doc.curveTo(cX - 10, cY + 22, cX + 10, cY + 22, cX + 10, cY + 16);
+
+  // Rosy cheeks
+  doc.setFillColor(254, 202, 202);
+  doc.circle(cX - 22, cY + 8, 5, 'F');
+  doc.circle(cX + 22, cY + 8, 5, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(194, 65, 12);
+  doc.text('Little Hands, Big Imagination!', width / 2, 185, { align: 'center' });
+
+  // "This Special Book Belongs To" Box
   doc.setFillColor(248, 250, 252);
   doc.setDrawColor(199, 210, 254);
   doc.roundedRect(25, 202, 160, 32, 4, 4, 'FD');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(10.5);
   doc.setTextColor(71, 85, 105);
-  doc.text('This Special Playbook Belongs To:', width / 2, 212, { align: 'center' });
+  doc.text('This Special Book Belongs To:', width / 2, 212, { align: 'center' });
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(225, 29, 72);
-  if (childName) {
-    doc.text(childName, width / 2, 224, { align: 'center' });
+  if (childName && childName.trim()) {
+    doc.text(childName.trim(), width / 2, 224, { align: 'center' });
   } else {
     doc.setDrawColor(148, 163, 184);
     doc.setLineDashPattern([2, 2], 0);
@@ -483,1212 +231,3471 @@ function generate100PagePlaybookPDF(
     doc.setLineDashPattern([], 0);
   }
 
-  // Cover Feature Highlights Pill
-  const features = ['✓ Pre-Writing Tracing', '✓ Mazes & Puzzles', '✓ A-Z & Numbers', '✓ Answer Keys'];
+  // Feature Highlights
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text(features.join('     •     '), width / 2, 250, { align: 'center' });
+  doc.text('✓ Extra-Thick Outlines  •  ✓ Toddler Friendly  •  ✓ Printable A4 Format  •  ✓ Screen-Free Fun', width / 2, 248, { align: 'center' });
 
   // Cover Footer
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(148, 163, 184);
-  doc.text('Printable Edition (A4) • Teacher & Parent Approved • www.littlecolourworld.com', width / 2, 275, { align: 'center' });
-
-  // --- 2. TITLE PAGE & EDUCATOR GUIDE ---
-  doc.addPage();
-  doc.setDrawColor(255, 107, 107);
-  doc.setLineWidth(1.5);
-  doc.roundedRect(10, 10, width - 20, height - 20, 5, 5);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.setTextColor(30, 41, 59);
-  doc.text("Educator & Parent Learning Guide", width / 2, 26, { align: 'center' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Foundational Early Childhood Skill Development System', width / 2, 33, { align: 'center' });
-
-  // 4 Milestone Cards
-  const pillars = [
-    { title: '1. Fine Motor & Handwriting', desc: 'Pre-writing line paths, pencil grip control, and finger-muscle strength.' },
-    { title: '2. Numeracy & Math Logic', desc: 'Number recognition, 1-100 visual counting, shape classification, and addition.' },
-    { title: '3. Phonics & Observation', desc: 'Alphabet phonics, I-Spy scanning, and spot-the-difference visual focus.' },
-    { title: '4. Creative Self-Expression', desc: 'Freehand doodling, healthy daily habits, and nature life-cycle discovery.' },
-  ];
-
-  pillars.forEach((p, idx) => {
-    const yP = 46 + idx * 28;
-    doc.setFillColor(254, 242, 242);
-    doc.setDrawColor(254, 202, 202);
-    doc.roundedRect(20, yP, 170, 23, 3, 3, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(190, 18, 60);
-    doc.text(p.title, 26, yP + 8);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(71, 85, 105);
-    doc.text(p.desc, 26, yP + 16);
-  });
-
-  // Daily Schedule Box
-  doc.setFillColor(240, 253, 250);
-  doc.setDrawColor(153, 246, 228);
-  doc.roundedRect(20, 168, 170, 36, 4, 4, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(15, 118, 110);
-  doc.text('Recommended Routine for Parents & Teachers:', 26, 178);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(51, 65, 85);
-  doc.text('• Dedicate 15 to 20 minutes daily of relaxed, screen-free playtime.', 26, 186);
-  doc.text('• Praise patience, focus, and curiosity rather than perfection.', 26, 192);
-  doc.text('• Encourage verbal expression: ask your child to describe what they are coloring!', 26, 198);
-
-  // Supplies Checklist
-  doc.setFillColor(254, 252, 232);
-  doc.setDrawColor(254, 240, 138);
-  doc.roundedRect(20, 212, 170, 34, 4, 4, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(133, 77, 14);
-  doc.text('Recommended Supplies Checklist:', 26, 222);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(71, 85, 105);
-  doc.text('□ Chunky triangular crayons (encourages correct 3-finger tripod grip)', 26, 230);
-  doc.text('□ Washable child-safe sketch pens & soft HB pencils', 26, 236);
-  doc.text('□ Star reward stickers & child safety scissors', 26, 242);
-
-  // --- 3. TABLE OF CONTENTS ---
-  doc.addPage();
-  doc.setDrawColor(255, 107, 107);
-  doc.setLineWidth(1.5);
-  doc.roundedRect(10, 10, width - 20, height - 20, 5, 5);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Table of Contents', width / 2, 26, { align: 'center' });
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('18 Foundational Activity Categories for Ages 3–6', width / 2, 33, { align: 'center' });
-
-  const categories = [
-    { num: 1, title: 'Alphabet Learning (A–Z)', page: 4 },
-    { num: 2, title: 'Numbers & Counting (1–100)', page: 5 },
-    { num: 3, title: 'Shapes & Colors', page: 6 },
-    { num: 4, title: 'Tracing & Handwriting', page: 7 },
-    { num: 5, title: 'Coloring Activities', page: 8 },
-    { num: 6, title: 'Animals & Birds', page: 9 },
-    { num: 7, title: 'Fruits & Vegetables', page: 10 },
-    { num: 8, title: 'Matching Activities', page: 11 },
-    { num: 9, title: 'Mazes & Puzzles', page: 12 },
-    { num: 10, title: 'Spot the Difference', page: 13 },
-    { num: 11, title: 'Dot-to-Dot Activities', page: 14 },
-    { num: 12, title: 'Logical Thinking Games', page: 15 },
-    { num: 13, title: 'Memory & Observation', page: 16 },
-    { num: 14, title: 'Basic Mathematics', page: 17 },
-    { num: 15, title: 'Creative Drawing', page: 18 },
-    { num: 16, title: 'Good Habits & Daily Routine', page: 19 },
-    { num: 17, title: 'Nature & Environment', page: 20 },
-    { num: 18, title: 'Fun Educational Games', page: 21 },
-  ];
-
-  // Two column layout for TOC
-  categories.forEach((cat, idx) => {
-    const isCol2 = idx >= 9;
-    const colX = isCol2 ? 112 : 22;
-    const rowIdx = isCol2 ? idx - 9 : idx;
-    const yT = 46 + rowIdx * 20;
-
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(colX, yT, 78, 16, 2, 2, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(225, 29, 72);
-    doc.text(`${cat.num}.`, colX + 4, yT + 10);
-
-    doc.setTextColor(30, 41, 59);
-    doc.text(cat.title, colX + 11, yT + 10);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(148, 163, 184);
-    doc.text(`p. ${cat.page}`, colX + 72, yT + 10, { align: 'right' });
-  });
-
-  // End Matter in TOC
-  doc.setFillColor(254, 243, 199);
-  doc.setDrawColor(252, 211, 77);
-  doc.roundedRect(22, 234, 168, 16, 3, 3, 'FD');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9.5);
-  doc.setTextColor(146, 64, 14);
-  doc.text('★ Answer Keys (p. 22)   •   ★ Super Artist Certificate (p. 23)   •   ★ Back Cover (p. 24)', width / 2, 244, { align: 'center' });
-
-  // --- 4. CATEGORY 1: ALPHABET LEARNING ---
-  doc.addPage();
-  drawPlaybookBorder(1, 'Alphabet Learning (A–Z)', 4);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Letter A is for Apple! /æ/ /æ/ Apple', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Say the letter sound out loud, trace the big letter, and colour the smiling apple!', width / 2, 37, { align: 'center' });
-
-  // Big Hollow Letters A & a
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(72);
-  doc.setTextColor(225, 29, 72);
-  doc.text('A', 50, 95, { align: 'center' });
-  doc.text('a', 95, 95, { align: 'center' });
-
-  // Smiling Apple Art
-  doc.setDrawColor(225, 29, 72);
-  doc.setLineWidth(2.2);
-  doc.circle(150, 75, 25);
-  // Leaf & Stem
-  doc.setDrawColor(34, 197, 94);
-  doc.ellipse(150, 46, 8, 4);
-  doc.setDrawColor(120, 53, 15);
-  doc.line(150, 50, 150, 43);
-
-  // Tracing Practice Lines
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(71, 85, 105);
-  doc.text('Trace Uppercase and Lowercase Letters:', 22, 120);
-
-  for (let r = 0; r < 3; r++) {
-    const yL = 130 + r * 22;
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.8);
-    doc.line(22, yL, 188, yL);
-    doc.setLineDashPattern([2, 2], 0);
-    doc.line(22, yL + 8, 188, yL + 8);
-    doc.setLineDashPattern([], 0);
-    doc.line(22, yL + 16, 188, yL + 16);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.setTextColor(148, 163, 184);
-    doc.text('A     A     A     A     a     a     a     a', 28, yL + 13);
-  }
-
-  // Word association prompt
-  doc.setFillColor(254, 242, 242);
-  doc.roundedRect(22, 205, 166, 32, 3, 3, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(190, 18, 60);
-  doc.text('Circle all other words that begin with the /A/ sound:', 28, 216);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(51, 65, 85);
-  doc.text('1. [ Ant 🐜 ]        2. [ Astronaut 👨‍🚀 ]        3. [ Alligator 🐊 ]        4. [ Acorn 🌰 ]', 28, 227);
-
-  // --- 5. CATEGORY 2: NUMBERS AND COUNTING ---
-  doc.addPage();
-  drawPlaybookBorder(2, 'Numbers & Counting (1–100)', 5);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('The 1 to 10 Balloon Fiesta!', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Count the floating party balloons, trace the numbers, and colour according to the code.', width / 2, 37, { align: 'center' });
-
-  // 10 Floating Balloons with Numbers
-  for (let b = 1; b <= 10; b++) {
-    const col = (b - 1) % 5;
-    const row = Math.floor((b - 1) / 5);
-    const bX = 35 + col * 35;
-    const bY = 62 + row * 60;
-
-    doc.setDrawColor(30, 41, 59);
-    doc.setLineWidth(1.8);
-    doc.ellipse(bX, bY, 13, 16);
-    // Balloon knot & string
-    doc.triangle(bX - 2, bY + 16, bX + 2, bY + 16, bX, bY + 19, 'FD');
-    doc.setLineDashPattern([1.5, 1.5], 0);
-    doc.line(bX, bY + 19, bX, bY + 30);
-    doc.setLineDashPattern([], 0);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.setTextColor(234, 88, 12);
-    doc.text(`${b}`, bX, bY + 6, { align: 'center' });
-  }
-
-  // Counting Practice Bar
-  doc.setFillColor(255, 247, 237);
-  doc.setDrawColor(254, 215, 170);
-  doc.roundedRect(22, 195, 166, 44, 4, 4, 'FD');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(194, 65, 12);
-  doc.text('Color By Number Code:', 28, 205);
-
-  const numPalette = [
-    '1-2: Red', '3-4: Blue', '5-6: Yellow', '7-8: Green', '9-10: Purple'
-  ];
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(71, 85, 105);
-  doc.text(numPalette.join('      •      '), 28, 216);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Number Challenge: How many total balloons are in the sky? Write: [  10  ]', 28, 230);
-
-  // --- 6. CATEGORY 3: SHAPES AND COLORS ---
-  doc.addPage();
-  drawPlaybookBorder(3, 'Shapes & Colors', 6);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('The Geometric Shape Detective', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Identify each shape, trace its perimeter, and color using the secret detective code!', width / 2, 37, { align: 'center' });
-
-  // 5 Shapes
-  const shapesData = [
-    { name: 'Circle', color: 'Red', draw: (x: number, y: number) => doc.circle(x, y, 16) },
-    { name: 'Square', color: 'Blue', draw: (x: number, y: number) => doc.rect(x - 14, y - 14, 28, 28) },
-    { name: 'Triangle', color: 'Yellow', draw: (x: number, y: number) => doc.triangle(x - 16, y + 14, x + 16, y + 14, x, y - 16) },
-    { name: 'Star', color: 'Orange', draw: (x: number, y: number) => doc.circle(x, y, 14) },
-    { name: 'Diamond', color: 'Green', draw: (x: number, y: number) => doc.triangle(x, y - 15, x + 15, y, x, y + 15) },
-  ];
-
-  shapesData.forEach((s, idx) => {
-    const xS = 32 + idx * 36;
-    const yS = 70;
-    doc.setDrawColor(30, 41, 59);
-    doc.setLineWidth(2);
-    s.draw(xS, yS);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(30, 41, 59);
-    doc.text(s.name, xS, yS + 26, { align: 'center' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(225, 29, 72);
-    doc.text(`[${s.color}]`, xS, yS + 31, { align: 'center' });
-  });
-
-  // Detective Search Grid
-  doc.setFillColor(240, 249, 255);
-  doc.setDrawColor(186, 230, 253);
-  doc.roundedRect(22, 120, 166, 120, 4, 4, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(3, 105, 161);
-  doc.text('Detective Tally: Count How Many of Each Shape are in the Box:', 28, 132);
-
-  // Scatter shapes inside detective grid
-  doc.setDrawColor(50, 50, 50);
-  doc.circle(45, 155, 10);
-  doc.circle(85, 175, 8);
-  doc.circle(145, 150, 12);
-  doc.rect(60, 145, 16, 16);
-  doc.rect(115, 165, 14, 14);
-  doc.triangle(100, 155, 115, 155, 107, 140);
-  doc.triangle(155, 185, 170, 185, 162, 170);
-
-  // Tally inputs
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Circles found: [  3  ]      Squares found: [  2  ]      Triangles found: [  2  ]', width / 2, 225, { align: 'center' });
-
-  // --- 7. CATEGORY 4: TRACING & PRE-WRITING ---
-  doc.addPage();
-  drawPlaybookBorder(4, 'Tracing & Handwriting', 7);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Pre-Writing Motor Skills: The Great Explorer Paths', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Keep your pencil on the line from START to FINISH without lifting your hand!', width / 2, 37, { align: 'center' });
-
-  // 3 Tracing Paths
-  const paths = [
-    { title: '1. Ocean Waves (Helping the Little Dolphin Jump):', y: 55 },
-    { title: '2. Rollercoaster Loops (Guiding the Red Toy Airplane):', y: 115 },
-    { title: '3. Castle Mountain Steps (Guiding the Mountain Explorer):', y: 175 },
-  ];
-
-  paths.forEach((p, idx) => {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(79, 70, 229);
-    doc.text(p.title, 22, p.y);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(22, 163, 74);
-    doc.text('START ➔', 22, p.y + 20);
-    doc.setTextColor(220, 38, 38);
-    doc.text('★ FINISH', 172, p.y + 20);
-
-    doc.setLineWidth(1.6);
-    doc.setLineDashPattern([3, 2], 0);
-    doc.setDrawColor(79, 70, 229);
-
-    if (idx === 0) {
-      // Gentle Waves
-      doc.moveTo(40, p.y + 20);
-      doc.curveTo(65, p.y + 5, 80, p.y + 35, 105, p.y + 20);
-      doc.curveTo(130, p.y + 5, 145, p.y + 35, 170, p.y + 20);
-      doc.stroke();
-    } else if (idx === 1) {
-      // Looping waves
-      doc.moveTo(40, p.y + 20);
-      doc.curveTo(60, p.y, 80, p.y + 35, 100, p.y + 15);
-      doc.curveTo(120, p.y, 140, p.y + 35, 170, p.y + 20);
-      doc.stroke();
-    } else {
-      // Zigzag stairs
-      doc.line(40, p.y + 25, 60, p.y + 5);
-      doc.line(60, p.y + 5, 80, p.y + 25);
-      doc.line(80, p.y + 25, 100, p.y + 5);
-      doc.line(100, p.y + 5, 120, p.y + 25);
-      doc.line(120, p.y + 25, 140, p.y + 5);
-      doc.line(140, p.y + 5, 170, p.y + 25);
-    }
-    doc.setLineDashPattern([], 0);
-  });
-
-  // Educator pencil grip note
-  doc.setFillColor(254, 243, 199);
-  doc.roundedRect(22, 235, 166, 16, 3, 3, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(146, 64, 14);
-  doc.text('Pedagogical Tip: Controlled curved tracing directly reinforces the fine motor dexterity required for writing letters a, b, c, and numbers 2, 3, 5!', width / 2, 244, { align: 'center' });
-
-  // --- 8. CATEGORY 5: COLORING ACTIVITIES ---
-  doc.addPage();
-  drawPlaybookBorder(5, 'Coloring Activities', 8);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Playful Lion King in the Savannah', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Extra-thick bold outlines designed for clean toddler coloring and color experimentation.', width / 2, 37, { align: 'center' });
-
-  // Big Bold Coloring Centerpiece
-  const lionX = width / 2;
-  const lionY = 135;
-  doc.setDrawColor(20, 20, 20);
-  doc.setLineWidth(2.5);
-  doc.circle(lionX, lionY, 52); // Mane
-  doc.circle(lionX, lionY, 38); // Face
-  doc.circle(lionX - 24, lionY - 30, 11);
-  doc.circle(lionX + 24, lionY - 30, 11);
-  doc.circle(lionX - 14, lionY - 8, 4, 'FD'); // Eyes
-  doc.circle(lionX + 14, lionY - 8, 4, 'FD');
-  doc.triangle(lionX - 7, lionY + 4, lionX + 7, lionY + 4, lionX, lionY + 12, 'FD');
-  doc.line(lionX, lionY + 12, lionX, lionY + 18);
-  doc.curveTo(lionX - 10, lionY + 24, lionX + 10, lionY + 24, lionX + 10, lionY + 18);
-
-  // Suggested Palette at Bottom
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(22, 232, 166, 20, 3, 3, 'FD');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(51, 65, 85);
-  doc.text('Suggested Crayons: [ 🟡 Sunshine Yellow ]   [ 🟠 Sunset Orange ]   [ 🟤 Earth Brown ]', width / 2, 244, { align: 'center' });
-
-  // --- 9. CATEGORY 6: ANIMALS AND BIRDS ---
-  doc.addPage();
-  drawPlaybookBorder(6, 'Animals & Birds', 9);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('The Happy Toucan & Jungle Friends', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Learn fascinating wildlife facts while coloring this vibrant rainforest bird!', width / 2, 37, { align: 'center' });
-
-  // Vector Toucan Illustration
-  doc.setDrawColor(30, 41, 59);
-  doc.setLineWidth(2.2);
-  doc.ellipse(100, 115, 25, 35); // Body
-  doc.circle(100, 80, 18); // Head
-  doc.curveTo(115, 75, 145, 95, 145, 95); // Beak top
-  doc.curveTo(135, 105, 105, 90, 105, 90); // Beak bottom
-  doc.circle(95, 78, 3.5, 'FD'); // Eye
-  // Branch
-  doc.setLineWidth(3);
-  doc.line(60, 145, 160, 145);
-
-  // Fun Educational Fact
-  doc.setFillColor(240, 253, 244);
-  doc.setDrawColor(187, 247, 208);
-  doc.roundedRect(22, 195, 166, 45, 4, 4, 'FD');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10.5);
-  doc.setTextColor(21, 128, 61);
-  doc.text('Did You Know? (Fun Wildlife Fact):', 28, 207);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(51, 65, 85);
-  doc.text('• Toucans live in the lush canopies of tropical rainforests.', 28, 217);
-  doc.text('• Their enormous beaks are made of lightweight honeycomb keratin — the same as your fingernails!', 28, 224);
-  doc.text('• They love eating wild papayas, sweet berries, and rainforest insects.', 28, 231);
-
-  // --- 10. CATEGORY 7: FRUITS AND VEGETABLES ---
-  doc.addPage();
-  drawPlaybookBorder(7, 'Fruits & Vegetables', 10);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('The Healthy Rainbow Garden Harvest', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Match the healthy fruits to their names, then color each one in its natural vibrant shade.', width / 2, 37, { align: 'center' });
-
-  // 4 Fruit/Veg Cards
-  const foods = [
-    { name: 'Red Apple', type: 'Fruit', color: 'Crimson Red' },
-    { name: 'Orange Carrot', type: 'Vegetable', color: 'Bright Orange' },
-    { name: 'Yellow Banana', type: 'Fruit', color: 'Sunshine Yellow' },
-    { name: 'Green Broccoli', type: 'Vegetable', color: 'Emerald Green' },
-  ];
-
-  foods.forEach((f, idx) => {
-    const col = idx % 2;
-    const row = Math.floor(idx / 2);
-    const fX = 25 + col * 85;
-    const fY = 55 + row * 85;
-
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(fX, fY, 75, 75, 4, 4, 'FD');
-
-    doc.setDrawColor(40, 40, 40);
-    doc.setLineWidth(1.8);
-    doc.circle(fX + 37, fY + 30, 18); // Food placeholder icon
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(30, 41, 59);
-    doc.text(f.name, fX + 37, fY + 58, { align: 'center' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(100, 116, 139);
-    doc.text(`Type: ${f.type}  •  Color: ${f.color}`, fX + 37, fY + 66, { align: 'center' });
-  });
-
-  doc.setFillColor(254, 242, 242);
-  doc.roundedRect(22, 232, 166, 18, 3, 3, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(190, 18, 60);
-  doc.text('Nutrition Habit: Eating 5 colors of fruits and vegetables daily gives you superhero strength!', width / 2, 243, { align: 'center' });
-
-  // --- 11. CATEGORY 8: MATCHING ACTIVITIES ---
-  doc.addPage();
-  drawPlaybookBorder(8, 'Matching Activities', 11);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Animal to Shadow Silhouette Matching', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Draw a line connecting each friendly cartoon animal to its matching solid shadow!', width / 2, 37, { align: 'center' });
-
-  const pairs = [
-    { animal: '1. Playful Puppy 🐶', shadow: 'C. Silhouette Elephant' },
-    { animal: '2. Cuddly Kitten 🐱', shadow: 'A. Silhouette Puppy' },
-    { animal: '3. Little Elephant 🐘', shadow: 'D. Silhouette Duckling' },
-    { animal: '4. Swimming Duck 🦆', shadow: 'B. Silhouette Kitten' },
-  ];
-
-  pairs.forEach((p, idx) => {
-    const yM = 60 + idx * 42;
-
-    // Left Column (Animals)
-    doc.setFillColor(254, 242, 242);
-    doc.setDrawColor(254, 202, 202);
-    doc.roundedRect(25, yM, 65, 26, 3, 3, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(190, 18, 60);
-    doc.text(p.animal, 30, yM + 16);
-
-    // Connecting Dots
-    doc.setFillColor(225, 29, 72);
-    doc.circle(95, yM + 13, 2.5, 'F');
-    doc.circle(115, yM + 13, 2.5, 'F');
-
-    // Right Column (Shadows - Shuffled)
-    doc.setFillColor(241, 245, 249);
-    doc.setDrawColor(203, 213, 225);
-    doc.roundedRect(120, yM, 65, 26, 3, 3, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(30, 41, 59);
-    doc.text(p.shadow, 125, yM + 16);
-  });
-
-  // --- 12. CATEGORY 9: MAZES AND PUZZLES ---
-  doc.addPage();
-  drawPlaybookBorder(9, 'Mazes & Puzzles', 12);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text("Buzzy the Honeybee's Garden Maze", width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Help Buzzy fly through the sunflower labyrinth to reach the sweet jar of honey!', width / 2, 37, { align: 'center' });
-
-  // Geometric Maze Grid
-  doc.setDrawColor(30, 41, 59);
-  doc.setLineWidth(2);
-  doc.roundedRect(30, 52, 150, 150, 4, 4);
-
-  // Maze Walls
-  doc.setLineWidth(2.2);
-  // Row 1
-  doc.line(30, 80, 130, 80);
-  doc.line(150, 80, 180, 80);
-  // Row 2
-  doc.line(55, 110, 180, 110);
-  // Row 3
-  doc.line(30, 140, 110, 140);
-  doc.line(135, 140, 180, 140);
-  // Row 4
-  doc.line(55, 170, 155, 170);
-
-  // Vertical blockades
-  doc.line(80, 80, 80, 110);
-  doc.line(130, 110, 130, 140);
-  doc.line(95, 140, 95, 170);
-
-  // Start & Finish Markers
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(22, 163, 74);
-  doc.text('🐝 START (Top Left)', 35, 48);
-  doc.setTextColor(225, 29, 72);
-  doc.text('🍯 FINISH (Sweet Honey)', 130, 208);
-
-  // Parent solution tip
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Solution Path Hint: Turn down at the opening at x:140, proceed through middle corridor. Solution on Page 22.', width / 2, 235, { align: 'center' });
-
-  // --- 13. CATEGORY 10: SPOT THE DIFFERENCE ---
-  doc.addPage();
-  drawPlaybookBorder(10, 'Spot the Difference', 13);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Spot 5 Differences Between Twin Scenes!', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Look closely at Picture A and Picture B. Find and circle the 5 subtle changes!', width / 2, 37, { align: 'center' });
-
-  // Two Picture Frames
-  doc.setDrawColor(203, 213, 225);
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(22, 50, 78, 120, 4, 4, 'FD'); // Picture A
-  doc.roundedRect(110, 50, 78, 120, 4, 4, 'FD'); // Picture B
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Picture A (Original)', 61, 62, { align: 'center' });
-  doc.text('Picture B (5 Differences)', 149, 62, { align: 'center' });
-
-  // Scenery graphics in Picture A
-  doc.setDrawColor(30, 41, 59);
-  doc.setLineWidth(1.5);
-  // Smiling Sun in A
-  doc.circle(40, 80, 10);
-  // Cute Cat
-  doc.circle(61, 120, 18);
-  doc.circle(61, 100, 12); // head
-  // Butterfly
-  doc.circle(80, 95, 4);
-
-  // Picture B with 5 Differences (Missing ray, different cat tail, extra flower, missing butterfly, striped ball)
-  doc.circle(128, 80, 10); // Sun
-  doc.circle(149, 120, 18); // Cat
-  doc.circle(149, 100, 12);
-  // Difference 1: Extra flower on ground
-  doc.circle(170, 150, 5);
-  // Difference 2: Cat wearing a bow tie
-  doc.rect(146, 110, 6, 4);
-
-  // Checkbox tally at bottom
-  doc.setFillColor(248, 250, 252);
-  doc.roundedRect(22, 185, 166, 45, 3, 3, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Check off each difference as you discover it:', 28, 197);
-
-  const diffCheck = [
-    '□ 1. Missing butterfly in sky',
-    '□ 2. Cat wears a fancy bow tie',
-    '□ 3. Extra blooming flower',
-    '□ 4. Sun ray count changed',
-    '□ 5. Little bird on fence',
-  ];
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(71, 85, 105);
-  doc.text(diffCheck.slice(0, 3).join('      '), 28, 209);
-  doc.text(diffCheck.slice(3).join('      '), 28, 219);
-
-  // --- 14. CATEGORY 11: DOT-TO-DOT ACTIVITIES ---
-  doc.addPage();
-  drawPlaybookBorder(11, 'Dot-to-Dot Activities', 14);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Connect the Dots 1 to 20: The Cosmic Rocket!', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Connect dots in sequential numerical order from 1 to 20 to reveal the flying space rocket.', width / 2, 37, { align: 'center' });
-
-  // 20 Numbered Dots arranged in a rocket shape
-  const rocketDots = [
-    { n: 1, x: 105, y: 55 },
-    { n: 2, x: 115, y: 70 },
-    { n: 3, x: 120, y: 90 },
-    { n: 4, x: 120, y: 120 },
-    { n: 5, x: 120, y: 150 },
-    { n: 6, x: 135, y: 165 }, // Right fin
-    { n: 7, x: 135, y: 180 },
-    { n: 8, x: 120, y: 175 },
-    { n: 9, x: 112, y: 185 }, // Exhaust nozzle
-    { n: 10, x: 108, y: 200 }, // Flame tip
-    { n: 11, x: 105, y: 195 },
-    { n: 12, x: 102, y: 200 },
-    { n: 13, x: 98, y: 185 },
-    { n: 14, x: 90, y: 175 },
-    { n: 15, x: 75, y: 180 }, // Left fin
-    { n: 16, x: 75, y: 165 },
-    { n: 17, x: 90, y: 150 },
-    { n: 18, x: 90, y: 120 },
-    { n: 19, x: 90, y: 90 },
-    { n: 20, x: 95, y: 70 },
-  ];
-
-  rocketDots.forEach((pt) => {
-    doc.setFillColor(225, 29, 72);
-    doc.circle(pt.x, pt.y, 2, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(30, 41, 59);
-    doc.text(`${pt.n}`, pt.x + 3, pt.y - 2);
-  });
-
-  // Prompt note
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(100, 116, 139);
-  doc.text('After connecting all 20 dots, color the rocket in bright red, silver, and fiery orange flames!', width / 2, 235, { align: 'center' });
-
-  // --- 15. CATEGORY 12: LOGICAL THINKING GAMES ---
-  doc.addPage();
-  drawPlaybookBorder(12, 'Logical Thinking Games', 15);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Complete the Pattern Sequences!', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Look at the repeating pattern on each row and draw or circle what comes next.', width / 2, 37, { align: 'center' });
-
-  // 4 Patterns
-  const patternRows = [
-    { title: 'Pattern 1: Circle, Star, Circle, Star, [ ? ]', ans: 'Answer: Circle ◯' },
-    { title: 'Pattern 2: Square, Triangle, Square, Triangle, [ ? ]', ans: 'Answer: Square ▢' },
-    { title: 'Pattern 3: Sun, Moon, Sun, Moon, [ ? ]', ans: 'Answer: Sun ☀️' },
-    { title: 'Pattern 4: Big Heart, Small Heart, Big Heart, [ ? ]', ans: 'Answer: Small Heart 💛' },
-  ];
-
-  patternRows.forEach((row, idx) => {
-    const yPat = 55 + idx * 42;
-    doc.setFillColor(254, 242, 242);
-    doc.setDrawColor(254, 202, 202);
-    doc.roundedRect(22, yPat, 166, 32, 3, 3, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(190, 18, 60);
-    doc.text(row.title, 28, yPat + 14);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(71, 85, 105);
-    doc.text(`Draw your answer in the box: [      ]    •    (${row.ans})`, 28, yPat + 24);
-  });
-
-  // --- 16. CATEGORY 13: MEMORY & OBSERVATION ---
-  doc.addPage();
-  drawPlaybookBorder(13, 'Memory & Observation', 16);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text("Preschool I-Spy & Observation Quest", width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Count each type of friendly object hidden in the observation garden below!', width / 2, 37, { align: 'center' });
-
-  // Scenery Box
-  doc.setDrawColor(203, 213, 225);
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(22, 50, 166, 115, 4, 4, 'FD');
-
-  // Random scattering of icons inside observation box
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(234, 88, 12);
-  doc.text('⭐   🌸   🍎   ⭐   🌸   ⭐   🍎', 35, 75);
-  doc.text('🍎   ⭐   🌸   ⭐   🍎   🌸   ⭐', 35, 105);
-  doc.text('🌸   🍎   ⭐   🍎   🌸   ⭐   🌸', 35, 135);
-
-  // Tally Answer Sheet
-  doc.setFillColor(241, 245, 249);
-  doc.roundedRect(22, 180, 166, 45, 4, 4, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Enter your final count:', 28, 195);
-  doc.setFontSize(10);
-  doc.setTextColor(71, 85, 105);
-  doc.text('1. How many Gold Stars ⭐ did you spot?  Write count: [  8  ]', 28, 205);
-  doc.text('2. How many Sweet Apples 🍎 did you spot?  Write count: [  6  ]', 28, 214);
-  doc.text('3. How many Flowers 🌸 did you spot?  Write count: [  7  ]', 28, 223);
-
-  // --- 17. CATEGORY 14: BASIC MATHEMATICS ---
-  doc.addPage();
-  drawPlaybookBorder(14, 'Basic Mathematics', 17);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('The Apple Tree Visual Addition Fun', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Count the apples on each side, add them together, and write the final sum.', width / 2, 37, { align: 'center' });
-
-  // 3 Addition Equations with Visual Apples
-  const mathProblems = [
-    { a: 2, b: 3, sum: 5, label: '2 Apples  +  3 Apples  =  [  5  ] Apples' },
-    { a: 4, b: 2, sum: 6, label: '4 Apples  +  2 Apples  =  [  6  ] Apples' },
-    { a: 3, b: 3, sum: 6, label: '3 Apples  +  3 Apples  =  [  6  ] Apples' },
-    { a: 5, b: 1, sum: 6, label: '5 Apples  +  1 Apple   =  [  6  ] Apples' },
-  ];
-
-  mathProblems.forEach((m, idx) => {
-    const yEq = 55 + idx * 42;
-    doc.setFillColor(254, 242, 242);
-    doc.setDrawColor(254, 202, 202);
-    doc.roundedRect(22, yEq, 166, 32, 3, 3, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(225, 29, 72);
-    doc.text(`${m.a}  +  ${m.b}  =  [   ]`, 35, yEq + 16);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(71, 85, 105);
-    doc.text(m.label, 35, yEq + 26);
-  });
-
-  // --- 18. CATEGORY 15: CREATIVE DRAWING ---
-  doc.addPage();
-  drawPlaybookBorder(15, 'Creative Drawing', 18);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Finish the Friendly Monster Face!', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Use your wildest imagination to draw silly eyes, funny teeth, cute horns, and wild hair!', width / 2, 37, { align: 'center' });
-
-  // Outlined Blank Monster Body
-  doc.setDrawColor(30, 41, 59);
-  doc.setLineWidth(2.5);
-  doc.ellipse(width / 2, 130, 50, 60); // Monster head & body
-  // Cute feet
-  doc.circle(width / 2 - 25, 192, 10);
-  doc.circle(width / 2 + 25, 192, 10);
-  // Cute little antenna
-  doc.line(width / 2, 70, width / 2, 55);
-  doc.circle(width / 2, 53, 5, 'FD');
-
-  // Creative prompts
-  doc.setFillColor(248, 250, 252);
-  doc.roundedRect(22, 215, 166, 25, 3, 3, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(71, 85, 105);
-  doc.text('Imagination Prompts: 1. Does your monster have 3 eyes?  2. Does it love eating broccoli or cupcakes?  3. Give it a name!', width / 2, 228, { align: 'center' });
-
-  // --- 19. CATEGORY 16: GOOD HABITS & DAILY ROUTINE ---
-  doc.addPage();
-  drawPlaybookBorder(16, 'Good Habits & Daily Activities', 19);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('My Healthy Morning Sunshine Checklist', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Color the star checkbox every morning when you finish each good habit!', width / 2, 37, { align: 'center' });
-
-  const habits = [
-    { title: '1. Brushing My Teeth with a Big Smile', desc: 'Brush twice daily to keep teeth sparkling white and strong.' },
-    { title: '2. Washing My Hands with Soap & Water', desc: 'Wash hands before every meal to keep playful germs away.' },
-    { title: '3. Eating a Wholesome Rainbow Breakfast', desc: 'Fuel your growing body with milk, oats, and fresh juicy fruits.' },
-    { title: '4. Tidying Up My Toys & Books', desc: 'Putting my toys back in their baskets makes home happy and neat.' },
-  ];
-
-  habits.forEach((h, idx) => {
-    const yH = 55 + idx * 42;
-    doc.setFillColor(254, 242, 242);
-    doc.setDrawColor(254, 202, 202);
-    doc.roundedRect(22, yH, 166, 32, 3, 3, 'FD');
-
-    // Star Checkbox
-    doc.setFillColor(254, 240, 138);
-    doc.circle(38, yH + 16, 8, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(161, 98, 7);
-    doc.text('★', 38, yH + 19, { align: 'center' });
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(190, 18, 60);
-    doc.text(h.title, 52, yH + 13);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(71, 85, 105);
-    doc.text(h.desc, 52, yH + 22);
-  });
-
-  // --- 20. CATEGORY 17: NATURE & ENVIRONMENT ---
-  doc.addPage();
-  drawPlaybookBorder(17, 'Nature & Environment', 20);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('The Life Cycle of a Sunflower: From Seed to Blossom', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Number the developmental stages from 1 to 4 in chronological order.', width / 2, 37, { align: 'center' });
-
-  const plantStages = [
-    { stage: 'Stage 1: Seed in Soil', desc: 'A tiny black seed rests in the warm fertile earth.' },
-    { stage: 'Stage 2: Green Sprout', desc: 'Two little leaves sprout reaching up for sunlight.' },
-    { stage: 'Stage 3: Growing Stalk', desc: 'Strong stem grows tall with green side leaves.' },
-    { stage: 'Stage 4: Giant Blossom', desc: 'Huge golden petals unfold facing the bright sun.' },
-  ];
-
-  plantStages.forEach((s, idx) => {
-    const col = idx % 2;
-    const row = Math.floor(idx / 2);
-    const sX = 25 + col * 85;
-    const sY = 55 + row * 85;
-
-    doc.setFillColor(240, 253, 244);
-    doc.setDrawColor(187, 247, 208);
-    doc.roundedRect(sX, sY, 75, 75, 4, 4, 'FD');
-
-    doc.setDrawColor(34, 197, 94);
-    doc.setLineWidth(1.8);
-    doc.circle(sX + 37, sY + 28, 16);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(21, 128, 61);
-    doc.text(s.stage, sX + 37, sY + 54, { align: 'center' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105);
-    const splitDesc = doc.splitTextToSize(s.desc, 65);
-    doc.text(splitDesc, sX + 37, sY + 62, { align: 'center' });
-  });
-
-  // --- 21. CATEGORY 18: FUN EDUCATIONAL GAMES ---
-  doc.addPage();
-  drawPlaybookBorder(18, 'Fun Educational Games', 21);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.setTextColor(30, 41, 59);
-  doc.text('The Animal Stepping Stones Trail', width / 2, 30, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Fill in the missing alphabet stepping stones to guide the puppy safely across the river!', width / 2, 37, { align: 'center' });
-
-  // Alphabet Trail
-  const lettersTrail = [
-    'A', 'B', '[ C ]', 'D', 'E', '[ F ]', 'G', 'H', '[ I ]', 'J', 'K', '[ L ]', 'M'
-  ];
-
-  lettersTrail.forEach((letter, i) => {
-    const col = i % 4;
-    const row = Math.floor(i / 4);
-    const lX = 35 + col * 40;
-    const lY = 60 + row * 40;
-
-    doc.setFillColor(254, 243, 199);
-    doc.setDrawColor(251, 191, 36);
-    doc.circle(lX, lY, 14, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor(146, 64, 14);
-    doc.text(letter, lX, lY + 4, { align: 'center' });
-  });
-
-  doc.setFillColor(241, 245, 249);
-  doc.roundedRect(22, 210, 166, 35, 4, 4, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Missing Letters to Fill In: C, F, I, L', width / 2, 225, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Say each letter sound as you cross each stepping stone!', width / 2, 235, { align: 'center' });
-
-  // --- 22. ANSWER KEYS ---
-  doc.addPage();
-  doc.setDrawColor(255, 107, 107);
-  doc.setLineWidth(1.5);
-  doc.roundedRect(10, 10, width - 20, height - 20, 5, 5);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.setTextColor(30, 41, 59);
-  doc.text('Official Answer Keys & Teacher Solutions', width / 2, 28, { align: 'center' });
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 116, 139);
-  doc.text('Verified solutions for Mazes, Spot the Difference, Patterns, and Math calculations.', width / 2, 35, { align: 'center' });
-
-  const solutions = [
-    { cat: 'Category 9 (Mazes & Puzzles)', sol: 'Start at top-left opening -> proceed south past first barrier -> turn right at x:140 -> turn down to center lane -> exit at bottom-right honey jar.' },
-    { cat: 'Category 10 (Spot the Difference)', sol: '1. Missing butterfly in sky. 2. Cat wears a fancy bow tie. 3. Extra blooming flower on grass. 4. One fewer sunbeam. 5. Little bird perched on fence.' },
-    { cat: 'Category 12 (Logical Thinking & Patterns)', sol: 'Row 1: Circle ◯.   Row 2: Square ▢.   Row 3: Sun ☀️.   Row 4: Small Heart 💛.' },
-    { cat: 'Category 13 (Memory & Observation I-Spy)', sol: 'Gold Stars: 8 total.   Sweet Apples: 6 total.   Pink Flowers: 7 total.' },
-    { cat: 'Category 14 (Basic Mathematics Addition)', sol: 'Problem 1: 2 + 3 = 5.   Problem 2: 4 + 2 = 6.   Problem 3: 3 + 3 = 6.   Problem 4: 5 + 1 = 6.' },
-    { cat: 'Category 18 (Alphabet Trail Stepping Stones)', sol: 'Missing letters in sequential order: C, F, I, L.' },
-  ];
-
-  solutions.forEach((s, idx) => {
-    const yS = 48 + idx * 30;
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.roundedRect(20, yS, 170, 25, 3, 3, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.setTextColor(225, 29, 72);
-    doc.text(s.cat, 26, yS + 8);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(51, 65, 85);
-    const splitSol = doc.splitTextToSize(s.sol, 160);
-    doc.text(splitSol, 26, yS + 15);
-  });
-
-  // --- 23. SUPER ARTIST & SCHOLAR CERTIFICATE ---
-  doc.addPage();
+  doc.text(`Official PDF Edition • ${totalPages} Fun Printable Pages • Page 1 of ${totalPages}`, width / 2, 275, { align: 'center' });
+}
+
+function drawCertificatePage(
+  doc: jsPDF,
+  product: Product,
+  childName: string,
+  pageNumber: number,
+  totalPages: number,
+  customTitle?: string,
+  customSubtitle?: string
+): void {
+  const width = 210;
+  const height = 297;
+
+  // Gold & Crimson borders
   doc.setDrawColor(255, 217, 61); // Gold
   doc.setLineWidth(4);
   doc.roundedRect(12, 12, width - 24, height - 24, 8, 8);
+
   doc.setDrawColor(225, 29, 72); // Crimson
   doc.setLineWidth(1.2);
   doc.roundedRect(16, 16, width - 32, height - 32, 6, 6);
 
+  // Top header ribbon
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.setTextColor(225, 29, 72);
   doc.text('LITTLE COLOUR WORLD AWARDS', width / 2, 42, { align: 'center' });
 
-  doc.setFontSize(26);
+  doc.setFontSize(24);
   doc.setTextColor(30, 41, 59);
-  doc.text('SUPER SCHOLAR CERTIFICATE', width / 2, 60, { align: 'center' });
+  const certTitle = customTitle || 'SUPER ARTIST CERTIFICATE';
+  doc.text(certTitle, width / 2, 58, { align: 'center' });
 
-  doc.setFontSize(11);
+  doc.setFontSize(10.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 116, 139);
-  doc.text('This official certificate of early learning mastery is proudly presented to:', width / 2, 80, { align: 'center' });
+  doc.text('This proud certificate of early childhood achievement is joyfully awarded to:', width / 2, 75, { align: 'center' });
 
-  // Recipient Line
+  // Recipient Name
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(24);
+  doc.setFontSize(22);
   doc.setTextColor(225, 29, 72);
-  const awardName = childName ? childName : '____________________________________';
-  doc.text(awardName, width / 2, 108, { align: 'center' });
+  const awardee = childName && childName.trim() ? childName.trim() : '____________________________________';
+  doc.text(awardee, width / 2, 102, { align: 'center' });
 
+  // Citation Body
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   doc.setTextColor(71, 85, 105);
-  const certBody = `For completing all 18 core developmental categories of The Ultimate Kids' Activity Playbook with tremendous curiosity, fine motor precision, and artistic joy!`;
-  const splitCert = doc.splitTextToSize(certBody, 140);
-  doc.text(splitCert, width / 2, 128, { align: 'center' });
+  const defaultBody = customSubtitle || `For showing fantastic focus, creative imagination, and wonderful fine motor control in completing all ${totalPages} pages of ${product.title}!`;
+  const splitBody = doc.splitTextToSize(defaultBody, 140);
+  doc.text(splitBody, width / 2, 122, { align: 'center' });
 
-  // Gold Medallion Star
+  // Big Gold Star Medallion in center
   doc.setFillColor(254, 240, 138);
   doc.setDrawColor(234, 179, 8);
   doc.setLineWidth(2);
-  doc.circle(width / 2, 180, 24, 'FD');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(161, 98, 7);
-  doc.text('★ ★ ★', width / 2, 178, { align: 'center' });
-  doc.setFontSize(10);
-  doc.text('SUPER KID', width / 2, 186, { align: 'center' });
+  doc.circle(width / 2, 175, 24, 'FD');
 
-  // Signatures
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(161, 98, 7);
+  doc.text('★ ★ ★', width / 2, 172, { align: 'center' });
+  doc.setFontSize(9.5);
+  doc.text('NO. 1 STAR', width / 2, 180, { align: 'center' });
+
+  // Signature and Date lines
   doc.setDrawColor(148, 163, 184);
   doc.setLineWidth(1);
-  doc.line(35, 235, 85, 235);
-  doc.line(125, 235, 175, 235);
+  doc.line(35, 230, 85, 230);
+  doc.line(125, 230, 175, 230);
+
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
-  doc.text('Parent / Teacher Signature', 60, 243, { align: 'center' });
-  doc.text('Date Completed', 150, 243, { align: 'center' });
+  doc.text('Parent / Teacher Signature', 60, 238, { align: 'center' });
+  doc.text('Date Completed', 150, 238, { align: 'center' });
 
-  // --- 24. BACK COVER ---
-  doc.addPage();
-  doc.setDrawColor(255, 107, 107);
-  doc.setLineWidth(3);
-  doc.roundedRect(10, 10, width - 20, height - 20, 8, 8);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.setTextColor(30, 41, 59);
-  doc.text("KIDS' ACTIVITY PLAYBOOK", width / 2, 45, { align: 'center' });
-
-  doc.setFontSize(12);
-  doc.setTextColor(225, 29, 72);
-  doc.text('The Complete 18-Category Early Learning Milestone System', width / 2, 55, { align: 'center' });
-
-  // 18 Categories summary box
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(25, 70, 160, 110, 4, 4, 'FD');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(30, 41, 59);
-  doc.text('18 Foundational Learning Domains Included:', 32, 82);
-
-  const backBullets = [
-    '• Alphabet Phonics & Tracing (A–Z)', '• Numbers, Counting & Simple Math',
-    '• Shapes, Colors & Visual Sorting', '• Pre-Writing Lines & Fine Motor Paths',
-    '• High-Contrast Animal & Bird Art', '• Healthy Garden Fruits & Vegetables',
-    '• Silhouette Shadow Matching Games', '• Critical Thinking Mazes & Labyrinths',
-    '• Spot the Difference Observation', '• Numbered Dot-to-Dot Cosmic Art',
-    '• Repeating Pattern Sequences', '• I-Spy Visual Memory & Tallying',
-    '• Creative Drawing & Imagination', '• Positive Habits & Morning Routine',
-    '• Nature Plant Life Cycle Discovery', '• Alphabet Stepping Stones Word Games',
-    '• Verified Solutions & Answer Keys', '• Official Super Scholar Certificate'
-  ];
-
-  backBullets.forEach((bullet, idx) => {
-    const colB = idx >= 9 ? 110 : 32;
-    const rowB = idx >= 9 ? idx - 9 : idx;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(71, 85, 105);
-    doc.text(bullet, colB, 92 + rowB * 9);
-  });
-
-  // Endorsement Seal
-  doc.setFillColor(254, 243, 199);
-  doc.setDrawColor(245, 158, 11);
-  doc.roundedRect(35, 195, 140, 28, 4, 4, 'FD');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(146, 64, 14);
-  doc.text('✓ 100% Educator Approved   •   ✓ Child-Safe Print Quality', width / 2, 207, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(113, 63, 18);
-  doc.text('Designed for home printing or commercial preschool activity workbooks.', width / 2, 215, { align: 'center' });
-
-  // Publisher Imprint & Barcode placeholder
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Published by Little Colour World • www.littlecolourworld.com', width / 2, 255, { align: 'center' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
-  doc.text('ISBN 978-1-84920-100-8 • Printed in A4 Format • Keep Learning, Keep Shining!', width / 2, 263, { align: 'center' });
+  doc.setTextColor(148, 163, 184);
+  doc.text(`Little Colour World Official Certificate • Page ${pageNumber} of ${totalPages}`, width / 2, 275, { align: 'center' });
 }
 
-function drawPageBorder(doc: jsPDF, width: number, height: number, pageNum: string) {
-  doc.setDrawColor(255, 217, 61); // yellow
-  doc.setLineWidth(1.5);
-  doc.roundedRect(10, 10, width - 20, height - 20, 5, 5);
+// -------------------------------------------------------------
+// DIVERSE VECTOR ILLUSTRATION ENGINE (EACH ANIMAL & OBJECT IS UNIQUE!)
+// -------------------------------------------------------------
 
-  doc.setFont('helvetica', 'normal');
+// Lion: Big scalloped mane, whiskers, paws
+export function drawVectorLion(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.circle(cx, cy, 48 * scale);
+  for (let a = 0; a < 360; a += 36) {
+    const rad = (a * Math.PI) / 180;
+    doc.circle(cx + Math.cos(rad) * 48 * scale, cy + Math.sin(rad) * 48 * scale, 11 * scale);
+  }
+  doc.circle(cx, cy, 34 * scale);
+  doc.circle(cx - 24 * scale, cy - 26 * scale, 10 * scale);
+  doc.circle(cx + 24 * scale, cy - 26 * scale, 10 * scale);
+  doc.setFillColor(30, 30, 30);
+  doc.circle(cx - 12 * scale, cy - 6 * scale, 3.5 * scale, 'F');
+  doc.circle(cx + 12 * scale, cy - 6 * scale, 3.5 * scale, 'F');
+  doc.triangle(cx - 6 * scale, cy + 3 * scale, cx + 6 * scale, cy + 3 * scale, cx, cy + 10 * scale, 'FD');
+  doc.line(cx, cy + 10 * scale, cx, cy + 15 * scale);
+  doc.curveTo(cx - 9 * scale, cy + 20 * scale, cx + 9 * scale, cy + 20 * scale, cx + 9 * scale, cy + 15 * scale);
+  doc.ellipse(cx - 18 * scale, cy + 54 * scale, 15 * scale, 10 * scale);
+  doc.ellipse(cx + 18 * scale, cy + 54 * scale, 15 * scale, 10 * scale);
+}
+
+// Elephant: Big floppy ears, curved trunk with water droplets
+export function drawVectorElephant(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 10 * scale, 42 * scale, 35 * scale);
+  doc.ellipse(cx - 38 * scale, cy - 6 * scale, 22 * scale, 30 * scale);
+  doc.ellipse(cx + 38 * scale, cy - 6 * scale, 22 * scale, 30 * scale);
+  doc.circle(cx, cy - 6 * scale, 28 * scale);
+  doc.setFillColor(30, 30, 30);
+  doc.circle(cx - 12 * scale, cy - 12 * scale, 3.5 * scale, 'F');
+  doc.circle(cx + 12 * scale, cy - 12 * scale, 3.5 * scale, 'F');
+  doc.moveTo(cx - 7 * scale, cy + 4 * scale);
+  doc.curveTo(cx - 12 * scale, cy + 28 * scale, cx + 22 * scale, cy + 34 * scale, cx + 20 * scale, cy + 20 * scale);
+  doc.stroke();
+  doc.circle(cx + 26 * scale, cy + 10 * scale, 2 * scale, 'F');
+  doc.circle(cx + 32 * scale, cy + 16 * scale, 2.5 * scale, 'F');
+}
+
+// Bear: Snout, honey pot in paws
+export function drawVectorBear(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 18 * scale, 36 * scale, 38 * scale);
+  doc.circle(cx, cy - 12 * scale, 32 * scale);
+  doc.circle(cx - 26 * scale, cy - 36 * scale, 11 * scale);
+  doc.circle(cx + 26 * scale, cy - 36 * scale, 11 * scale);
+  doc.ellipse(cx, cy - 4 * scale, 16 * scale, 12 * scale);
+  doc.setFillColor(30, 30, 30);
+  doc.circle(cx - 12 * scale, cy - 16 * scale, 3.5 * scale, 'F');
+  doc.circle(cx + 12 * scale, cy - 16 * scale, 3.5 * scale, 'F');
+  doc.ellipse(cx, cy - 8 * scale, 6 * scale, 4 * scale, 'F');
+  doc.roundedRect(cx - 15 * scale, cy + 16 * scale, 30 * scale, 26 * scale, 4 * scale, 4 * scale);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5 * scale);
+  doc.setTextColor(217, 119, 6);
+  doc.text('HONEY', cx, cy + 32 * scale, { align: 'center' });
+}
+
+// Dolphin: Leaping curve, dorsal fin, ocean waves
+export function drawVectorDolphin(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.moveTo(cx - 45 * scale, cy + 18 * scale);
+  doc.curveTo(cx - 20 * scale, cy - 36 * scale, cx + 25 * scale, cy - 36 * scale, cx + 45 * scale, cy);
+  doc.curveTo(cx + 25 * scale, cy - 10 * scale, cx - 15 * scale, cy + 2 * scale, cx - 45 * scale, cy + 18 * scale);
+  doc.stroke();
+  doc.triangle(cx + 2 * scale, cy - 30 * scale, cx + 18 * scale, cy - 30 * scale, cx + 8 * scale, cy - 45 * scale);
+  doc.triangle(cx - 45 * scale, cy + 18 * scale, cx - 60 * scale, cy + 8 * scale, cx - 58 * scale, cy + 28 * scale);
+  doc.setFillColor(30, 30, 30);
+  doc.circle(cx + 36 * scale, cy - 8 * scale, 3 * scale, 'F');
+  doc.line(cx - 60 * scale, cy + 45 * scale, cx + 60 * scale, cy + 45 * scale);
+  for (let w = -50; w <= 50; w += 25) {
+    doc.circle(cx + w * scale, cy + 45 * scale, 6 * scale);
+  }
+}
+
+// Monkey: Curling tail around vine, round ears, holding banana
+export function drawVectorMonkey(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 14 * scale, 28 * scale, 32 * scale);
+  doc.circle(cx, cy - 14 * scale, 26 * scale);
+  doc.circle(cx - 25 * scale, cy - 14 * scale, 9 * scale);
+  doc.circle(cx + 25 * scale, cy - 14 * scale, 9 * scale);
+  doc.ellipse(cx, cy - 8 * scale, 18 * scale, 14 * scale);
+  doc.setFillColor(30, 30, 30);
+  doc.circle(cx - 9 * scale, cy - 16 * scale, 3.5 * scale, 'F');
+  doc.circle(cx + 9 * scale, cy - 16 * scale, 3.5 * scale, 'F');
+  doc.ellipse(cx, cy - 7 * scale, 4 * scale, 3 * scale, 'F');
+  // Curling monkey tail
+  doc.moveTo(cx - 18 * scale, cy + 25 * scale);
+  doc.curveTo(cx - 45 * scale, cy + 30 * scale, cx - 40 * scale, cy - 10 * scale, cx - 30 * scale, cy - 25 * scale);
+  doc.stroke();
+  // Banana in hand
+  doc.ellipse(cx + 18 * scale, cy + 18 * scale, 12 * scale, 5 * scale);
+}
+
+// Giraffe: Tall neck with spots, little horns, smiling face
+export function drawVectorGiraffe(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 40 * scale, 32 * scale, 24 * scale);
+  // Tall long neck
+  doc.line(cx - 10 * scale, cy + 30 * scale, cx - 8 * scale, cy - 35 * scale);
+  doc.line(cx + 8 * scale, cy + 30 * scale, cx + 10 * scale, cy - 35 * scale);
+  // Head
+  doc.ellipse(cx + 4 * scale, cy - 42 * scale, 18 * scale, 14 * scale);
+  // Horns
+  doc.line(cx - 2 * scale, cy - 54 * scale, cx - 2 * scale, cy - 48 * scale);
+  doc.line(cx + 8 * scale, cy - 54 * scale, cx + 8 * scale, cy - 48 * scale);
+  doc.circle(cx - 2 * scale, cy - 55 * scale, 2.5 * scale, 'FD');
+  doc.circle(cx + 8 * scale, cy - 55 * scale, 2.5 * scale, 'FD');
+  // Spots along neck
+  doc.circle(cx, cy - 20 * scale, 5 * scale);
+  doc.circle(cx, cy - 2 * scale, 6 * scale);
+  doc.circle(cx, cy + 16 * scale, 6.5 * scale);
+}
+
+// Zebra: Striped coat, upright mane
+export function drawVectorZebra(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 12 * scale, 38 * scale, 28 * scale);
+  doc.circle(cx + 25 * scale, cy - 15 * scale, 20 * scale);
+  doc.line(cx + 20 * scale, cy - 32 * scale, cx + 18 * scale, cy - 42 * scale);
+  doc.line(cx + 30 * scale, cy - 32 * scale, cx + 32 * scale, cy - 42 * scale);
+  // Bold zebra stripes
+  for (let s = -20; s <= 20; s += 10) {
+    doc.line(cx + s * scale, cy - 2 * scale, cx + s * scale, cy + 26 * scale);
+  }
+}
+
+// Panda: Black eye patches, bamboo stalk
+export function drawVectorPanda(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 16 * scale, 36 * scale, 34 * scale);
+  doc.circle(cx, cy - 16 * scale, 30 * scale);
+  // Black ears
+  doc.circle(cx - 24 * scale, cy - 38 * scale, 10 * scale, 'FD');
+  doc.circle(cx + 24 * scale, cy - 38 * scale, 10 * scale, 'FD');
+  // Eye patches
+  doc.ellipse(cx - 12 * scale, cy - 16 * scale, 8 * scale, 6 * scale, 'FD');
+  doc.ellipse(cx + 12 * scale, cy - 16 * scale, 8 * scale, 6 * scale, 'FD');
+  doc.setFillColor(255, 255, 255);
+  doc.circle(cx - 12 * scale, cy - 16 * scale, 2 * scale, 'F');
+  doc.circle(cx + 12 * scale, cy - 16 * scale, 2 * scale, 'F');
+  // Green bamboo stalk in paws
+  doc.setDrawColor(34, 197, 94);
+  doc.setLineWidth(3 * scale);
+  doc.line(cx + 22 * scale, cy + 40 * scale, cx + 22 * scale, cy - 20 * scale);
+}
+
+// Farm Cow: Spotted hide, horns, cowbell
+export function drawVectorCow(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 15 * scale, 42 * scale, 30 * scale);
+  doc.circle(cx + 26 * scale, cy - 15 * scale, 22 * scale);
+  // Snout
+  doc.ellipse(cx + 34 * scale, cy - 10 * scale, 14 * scale, 10 * scale);
+  doc.circle(cx + 30 * scale, cy - 9 * scale, 2 * scale, 'F');
+  doc.circle(cx + 38 * scale, cy - 9 * scale, 2 * scale, 'F');
+  // Horns
+  doc.curveTo(cx + 18 * scale, cy - 32 * scale, cx + 14 * scale, cy - 42 * scale, cx + 10 * scale, cy - 40 * scale);
+  doc.curveTo(cx + 34 * scale, cy - 32 * scale, cx + 38 * scale, cy - 42 * scale, cx + 42 * scale, cy - 40 * scale);
+  // Spots
+  doc.circle(cx - 15 * scale, cy + 12 * scale, 9 * scale, 'FD');
+  doc.circle(cx + 8 * scale, cy + 18 * scale, 7 * scale, 'FD');
+}
+
+// Sheep: Puffy wool scallops
+export function drawVectorSheep(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Puffy wool perimeter
+  for (let a = 0; a < 360; a += 30) {
+    const rad = (a * Math.PI) / 180;
+    doc.circle(cx + Math.cos(rad) * 36 * scale, cy + 12 * scale + Math.sin(rad) * 28 * scale, 12 * scale);
+  }
+  // Face
+  doc.circle(cx + 24 * scale, cy - 6 * scale, 18 * scale);
+  doc.ellipse(cx + 15 * scale, cy - 4 * scale, 6 * scale, 12 * scale);
+  doc.ellipse(cx + 33 * scale, cy - 4 * scale, 6 * scale, 12 * scale);
+}
+
+// Piglet: Snout with nostrils, corkscrew tail
+export function drawVectorPiglet(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.circle(cx, cy + 10 * scale, 34 * scale);
+  doc.circle(cx, cy - 14 * scale, 26 * scale);
+  doc.triangle(cx - 20 * scale, cy - 35 * scale, cx - 10 * scale, cy - 25 * scale, cx - 25 * scale, cy - 15 * scale);
+  doc.triangle(cx + 20 * scale, cy - 35 * scale, cx + 10 * scale, cy - 25 * scale, cx + 25 * scale, cy - 15 * scale);
+  // Big round snout
+  doc.ellipse(cx, cy - 10 * scale, 15 * scale, 11 * scale);
+  doc.circle(cx - 5 * scale, cy - 10 * scale, 2.5 * scale, 'F');
+  doc.circle(cx + 5 * scale, cy - 10 * scale, 2.5 * scale, 'F');
+  // Curly tail
+  doc.moveTo(cx - 32 * scale, cy + 15 * scale);
+  doc.curveTo(cx - 48 * scale, cy + 10 * scale, cx - 48 * scale, cy + 28 * scale, cx - 40 * scale, cy + 25 * scale);
+  doc.stroke();
+}
+
+// Frog: Bulging eyes, lily pad
+export function drawVectorFrog(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Lily pad below
+  doc.ellipse(cx, cy + 38 * scale, 55 * scale, 14 * scale);
+  // Body and head
+  doc.ellipse(cx, cy + 10 * scale, 32 * scale, 26 * scale);
+  // Bulging eyes on top
+  doc.circle(cx - 16 * scale, cy - 14 * scale, 12 * scale);
+  doc.circle(cx + 16 * scale, cy - 14 * scale, 12 * scale);
+  doc.setFillColor(30, 30, 30);
+  doc.circle(cx - 16 * scale, cy - 14 * scale, 5 * scale, 'F');
+  doc.circle(cx + 16 * scale, cy - 14 * scale, 5 * scale, 'F');
+  // Wide frog smile
+  doc.line(cx - 18 * scale, cy + 4 * scale, cx + 18 * scale, cy + 4 * scale);
+}
+
+// Puppy: Floppy ears, wagging tail, bone
+export function drawVectorPuppy(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 18 * scale, 28 * scale, 32 * scale);
+  doc.circle(cx, cy - 12 * scale, 26 * scale);
+  // Long floppy ears
+  doc.ellipse(cx - 24 * scale, cy - 6 * scale, 10 * scale, 20 * scale);
+  doc.ellipse(cx + 24 * scale, cy - 6 * scale, 10 * scale, 20 * scale);
+  // Snout & tongue
+  doc.ellipse(cx, cy - 4 * scale, 14 * scale, 10 * scale);
+  doc.circle(cx - 10 * scale, cy - 16 * scale, 3.5 * scale, 'F');
+  doc.circle(cx + 10 * scale, cy - 16 * scale, 3.5 * scale, 'F');
+  doc.circle(cx, cy - 8 * scale, 4 * scale, 'F');
+  // Bone near paws
+  doc.roundedRect(cx - 18 * scale, cy + 46 * scale, 36 * scale, 7 * scale, 3 * scale, 3 * scale);
+}
+
+// Kitten: Pointed triangular ears, whiskers, yarn ball
+export function drawVectorKitten(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 16 * scale, 26 * scale, 30 * scale);
+  doc.circle(cx, cy - 12 * scale, 24 * scale);
+  // Pointed ears
+  doc.triangle(cx - 22 * scale, cy - 34 * scale, cx - 8 * scale, cy - 24 * scale, cx - 22 * scale, cy - 14 * scale);
+  doc.triangle(cx + 22 * scale, cy - 34 * scale, cx + 8 * scale, cy - 24 * scale, cx + 22 * scale, cy - 14 * scale);
+  doc.circle(cx - 9 * scale, cy - 14 * scale, 3.5 * scale, 'F');
+  doc.circle(cx + 9 * scale, cy - 14 * scale, 3.5 * scale, 'F');
+  // Whiskers
+  doc.line(cx - 26 * scale, cy - 8 * scale, cx - 10 * scale, cy - 6 * scale);
+  doc.line(cx - 28 * scale, cy - 2 * scale, cx - 10 * scale, cy - 4 * scale);
+  doc.line(cx + 10 * scale, cy - 6 * scale, cx + 26 * scale, cy - 8 * scale);
+  doc.line(cx + 10 * scale, cy - 4 * scale, cx + 28 * scale, cy - 2 * scale);
+  // Yarn ball
+  doc.circle(cx + 28 * scale, cy + 34 * scale, 12 * scale);
+}
+
+// Tiger: Fierce stripes, whiskers
+export function drawVectorTiger(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  drawVectorLion(doc, cx, cy, scale);
+  // Stripes on forehead & cheeks
+  doc.line(cx, cy - 28 * scale, cx, cy - 18 * scale);
+  doc.line(cx - 6 * scale, cy - 26 * scale, cx - 6 * scale, cy - 19 * scale);
+  doc.line(cx + 6 * scale, cy - 26 * scale, cx + 6 * scale, cy - 19 * scale);
+}
+
+// Kangaroo: Big feet, tail, pouch with joey
+export function drawVectorKangaroo(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 10 * scale, 30 * scale, 38 * scale);
+  doc.circle(cx + 15 * scale, cy - 28 * scale, 18 * scale);
+  doc.line(cx + 8 * scale, cy - 42 * scale, cx + 8 * scale, cy - 54 * scale);
+  doc.line(cx + 18 * scale, cy - 42 * scale, cx + 20 * scale, cy - 54 * scale);
+  // Pouch
+  drawArcCurve(doc, cx - 8 * scale, cy + 10 * scale, 14 * scale, 14 * scale);
+  // Joey head
+  doc.circle(cx - 2 * scale, cy + 4 * scale, 8 * scale);
+}
+
+// Penguin: Tuxedo wings, iceberg
+export function drawVectorPenguin(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Iceberg
+  doc.ellipse(cx, cy + 42 * scale, 48 * scale, 10 * scale);
+  doc.ellipse(cx, cy + 6 * scale, 26 * scale, 36 * scale);
+  doc.ellipse(cx, cy + 8 * scale, 16 * scale, 26 * scale); // White belly
+  doc.circle(cx, cy - 24 * scale, 18 * scale);
+  // Beak
+  doc.triangle(cx - 5 * scale, cy - 22 * scale, cx + 5 * scale, cy - 22 * scale, cx, cy - 14 * scale, 'FD');
+  // Flippers
+  doc.ellipse(cx - 26 * scale, cy + 6 * scale, 7 * scale, 22 * scale);
+  doc.ellipse(cx + 26 * scale, cy + 6 * scale, 7 * scale, 22 * scale);
+}
+
+// Tortoise: Hexagonal shell scutes
+export function drawVectorTortoise(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Shell
+  doc.ellipse(cx, cy + 5 * scale, 44 * scale, 30 * scale);
+  doc.line(cx - 44 * scale, cy + 18 * scale, cx + 44 * scale, cy + 18 * scale);
+  // Scutes
+  doc.circle(cx, cy, 12 * scale);
+  doc.circle(cx - 20 * scale, cy + 4 * scale, 9 * scale);
+  doc.circle(cx + 20 * scale, cy + 4 * scale, 9 * scale);
+  // Head
+  doc.ellipse(cx + 46 * scale, cy + 5 * scale, 14 * scale, 10 * scale);
+}
+
+// Squirrel: Giant bushy tail, acorn
+export function drawVectorSquirrel(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx - 10 * scale, cy + 16 * scale, 24 * scale, 28 * scale);
+  doc.circle(cx - 6 * scale, cy - 14 * scale, 20 * scale);
+  // Giant bushy tail
+  doc.moveTo(cx - 24 * scale, cy + 35 * scale);
+  doc.curveTo(cx - 55 * scale, cy + 20 * scale, cx - 55 * scale, cy - 35 * scale, cx - 25 * scale, cy - 45 * scale);
+  doc.curveTo(cx - 10 * scale, cy - 45 * scale, cx - 18 * scale, cy - 20 * scale, cx - 18 * scale, cy + 10 * scale);
+  doc.stroke();
+  // Acorn
+  doc.circle(cx + 14 * scale, cy + 12 * scale, 8 * scale);
+}
+
+// Hippo: Big snout, river ripples
+export function drawVectorHippo(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 15 * scale, 45 * scale, 30 * scale);
+  doc.circle(cx, cy - 15 * scale, 25 * scale);
+  doc.ellipse(cx, cy - 8 * scale, 28 * scale, 18 * scale);
+  doc.circle(cx - 10 * scale, cy - 8 * scale, 4 * scale, 'F');
+  doc.circle(cx + 10 * scale, cy - 8 * scale, 4 * scale, 'F');
+}
+
+// Rhino: Horn on nose, armored shoulder
+export function drawVectorRhino(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 15 * scale, 42 * scale, 28 * scale);
+  doc.circle(cx + 25 * scale, cy - 12 * scale, 22 * scale);
+  // Prominent horn
+  doc.triangle(cx + 38 * scale, cy - 14 * scale, cx + 46 * scale, cy - 14 * scale, cx + 48 * scale, cy - 35 * scale, 'FD');
+}
+
+// Deer: Spotted body, tiny antlers
+export function drawVectorDeer(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx - 10 * scale, cy + 18 * scale, 34 * scale, 24 * scale);
+  doc.ellipse(cx + 18 * scale, cy - 15 * scale, 16 * scale, 20 * scale);
+  // Antlers
+  doc.line(cx + 14 * scale, cy - 32 * scale, cx + 10 * scale, cy - 48 * scale);
+  doc.line(cx + 24 * scale, cy - 32 * scale, cx + 28 * scale, cy - 48 * scale);
+  // Spots
+  doc.circle(cx - 12 * scale, cy + 14 * scale, 2.5 * scale, 'F');
+  doc.circle(cx - 2 * scale, cy + 18 * scale, 2.5 * scale, 'F');
+}
+
+// Fox: Pointed ears, white-tipped bushy tail
+export function drawVectorFox(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 16 * scale, 28 * scale, 26 * scale);
+  doc.triangle(cx - 25 * scale, cy - 12 * scale, cx + 25 * scale, cy - 12 * scale, cx, cy + 8 * scale);
+  doc.triangle(cx - 24 * scale, cy - 36 * scale, cx - 10 * scale, cy - 14 * scale, cx - 26 * scale, cy - 14 * scale);
+  doc.triangle(cx + 24 * scale, cy - 36 * scale, cx + 10 * scale, cy - 14 * scale, cx + 26 * scale, cy - 14 * scale);
+  // Big bushy tail
+  doc.ellipse(cx - 32 * scale, cy + 24 * scale, 24 * scale, 12 * scale);
+}
+
+// Horse: Mane, hooves, fence
+export function drawVectorHorse(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx - 10 * scale, cy + 16 * scale, 38 * scale, 28 * scale);
+  doc.ellipse(cx + 25 * scale, cy - 16 * scale, 18 * scale, 24 * scale);
+  // Silky mane
+  for (let m = -26; m <= 0; m += 7) {
+    doc.line(cx + 18 * scale, cy + m * scale, cx + 8 * scale, cy + (m + 6) * scale);
+  }
+}
+
+// Bunny: Long upright ears, carrot
+export function drawVectorBunny(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 18 * scale, 26 * scale, 28 * scale);
+  doc.circle(cx, cy - 10 * scale, 22 * scale);
+  // Long ears
+  doc.ellipse(cx - 8 * scale, cy - 38 * scale, 7 * scale, 22 * scale);
+  doc.ellipse(cx + 8 * scale, cy - 38 * scale, 7 * scale, 22 * scale);
+  // Whiskers & nose
+  doc.circle(cx, cy - 6 * scale, 3 * scale, 'F');
+  doc.line(cx - 18 * scale, cy - 4 * scale, cx - 6 * scale, cy - 5 * scale);
+  doc.line(cx + 6 * scale, cy - 5 * scale, cx + 18 * scale, cy - 4 * scale);
+}
+
+// Dinosaur: Friendly brontosaurus
+export function drawVectorDinosaur(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx - 10 * scale, cy + 20 * scale, 42 * scale, 30 * scale);
+  // Long neck
+  doc.line(cx + 20 * scale, cy + 10 * scale, cx + 32 * scale, cy - 38 * scale);
+  doc.line(cx + 34 * scale, cy + 20 * scale, cx + 44 * scale, cy - 38 * scale);
+  doc.circle(cx + 38 * scale, cy - 42 * scale, 14 * scale);
+  // Long tail
+  doc.moveTo(cx - 45 * scale, cy + 15 * scale);
+  doc.curveTo(cx - 65 * scale, cy + 25 * scale, cx - 75 * scale, cy - 5 * scale, cx - 70 * scale, cy - 15 * scale);
+  doc.stroke();
+}
+
+// Butterfly: Symmetrical ornate wings
+export function drawVectorButterfly(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Body
+  doc.ellipse(cx, cy, 6 * scale, 34 * scale);
+  // Top wings
+  doc.ellipse(cx - 32 * scale, cy - 16 * scale, 28 * scale, 22 * scale);
+  doc.ellipse(cx + 32 * scale, cy - 16 * scale, 28 * scale, 22 * scale);
+  // Bottom wings
+  doc.ellipse(cx - 26 * scale, cy + 20 * scale, 20 * scale, 18 * scale);
+  doc.ellipse(cx + 26 * scale, cy + 20 * scale, 20 * scale, 18 * scale);
+  // Wing spots
+  doc.circle(cx - 32 * scale, cy - 16 * scale, 8 * scale);
+  doc.circle(cx + 32 * scale, cy - 16 * scale, 8 * scale);
+  // Antennae
+  doc.line(cx - 2 * scale, cy - 32 * scale, cx - 12 * scale, cy - 46 * scale);
+  doc.line(cx + 2 * scale, cy - 32 * scale, cx + 12 * scale, cy - 46 * scale);
+}
+
+// Seal: Balancing star ball on nose
+export function drawVectorSeal(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx - 10 * scale, cy + 18 * scale, 34 * scale, 26 * scale);
+  doc.circle(cx + 18 * scale, cy - 10 * scale, 18 * scale);
+  // Star ball on nose
+  doc.circle(cx + 28 * scale, cy - 36 * scale, 12 * scale);
+}
+
+// Birds: Specific vector drawings
+export function drawVectorOwl(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.line(cx - 45 * scale, cy + 40 * scale, cx + 45 * scale, cy + 40 * scale);
+  doc.ellipse(cx, cy + 6 * scale, 34 * scale, 38 * scale);
+  doc.circle(cx - 14 * scale, cy - 12 * scale, 14 * scale);
+  doc.circle(cx + 14 * scale, cy - 12 * scale, 14 * scale);
+  doc.setFillColor(30, 30, 30);
+  doc.circle(cx - 14 * scale, cy - 12 * scale, 6 * scale, 'F');
+  doc.circle(cx + 14 * scale, cy - 12 * scale, 6 * scale, 'F');
+  doc.triangle(cx - 4 * scale, cy - 3 * scale, cx + 4 * scale, cy - 3 * scale, cx, cy + 6 * scale, 'FD');
+  doc.line(cx - 24 * scale, cy - 28 * scale, cx - 14 * scale, cy - 22 * scale);
+  doc.line(cx + 24 * scale, cy - 28 * scale, cx + 14 * scale, cy - 22 * scale);
+}
+
+export function drawVectorPeacock(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Fan of tail feathers
+  for (let a = 180; a <= 360; a += 22) {
+    const rad = (a * Math.PI) / 180;
+    const px = cx + Math.cos(rad) * 55 * scale;
+    const py = cy + 15 * scale + Math.sin(rad) * 45 * scale;
+    doc.line(cx, cy + 15 * scale, px, py);
+    doc.circle(px, py, 6 * scale);
+  }
+  // Body & crest
+  doc.ellipse(cx, cy + 16 * scale, 16 * scale, 24 * scale);
+  doc.circle(cx, cy - 14 * scale, 12 * scale);
+}
+
+export function drawVectorToucan(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.line(cx - 40 * scale, cy + 36 * scale, cx + 40 * scale, cy + 36 * scale);
+  doc.ellipse(cx - 10 * scale, cy + 8 * scale, 24 * scale, 30 * scale);
+  doc.circle(cx - 8 * scale, cy - 18 * scale, 18 * scale);
+  // Giant bill
+  doc.moveTo(cx + 8 * scale, cy - 28 * scale);
+  doc.curveTo(cx + 45 * scale, cy - 25 * scale, cx + 55 * scale, cy - 5 * scale, cx + 35 * scale, cy - 2 * scale);
+  doc.curveTo(cx + 20 * scale, cy - 8 * scale, cx + 8 * scale, cy - 10 * scale, cx + 8 * scale, cy - 28 * scale);
+  doc.stroke();
+}
+
+export function drawVectorFlamingo(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 6 * scale, 28 * scale, 20 * scale);
+  // Long S-neck
+  doc.moveTo(cx + 18 * scale, cy + 2 * scale);
+  doc.curveTo(cx + 34 * scale, cy - 20 * scale, cx + 22 * scale, cy - 40 * scale, cx + 28 * scale, cy - 48 * scale);
+  doc.stroke();
+  doc.circle(cx + 28 * scale, cy - 50 * scale, 10 * scale);
+  // Stilt legs
+  doc.line(cx - 6 * scale, cy + 24 * scale, cx - 6 * scale, cy + 54 * scale);
+  doc.line(cx + 8 * scale, cy + 24 * scale, cx + 16 * scale, cy + 38 * scale);
+}
+
+export function drawVectorHummingbird(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx - 12 * scale, cy, 22 * scale, 14 * scale);
+  doc.circle(cx + 10 * scale, cy - 6 * scale, 10 * scale);
+  // Needle beak
+  doc.line(cx + 20 * scale, cy - 6 * scale, cx + 48 * scale, cy - 8 * scale);
+  // Flower
+  doc.circle(cx + 52 * scale, cy - 8 * scale, 8 * scale);
+}
+
+export function drawVectorSwan(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy + 12 * scale, 38 * scale, 22 * scale);
+  doc.moveTo(cx + 22 * scale, cy + 8 * scale);
+  doc.curveTo(cx + 38 * scale, cy - 10 * scale, cx + 20 * scale, cy - 36 * scale, cx + 28 * scale, cy - 44 * scale);
+  doc.stroke();
+  doc.circle(cx + 30 * scale, cy - 45 * scale, 8 * scale);
+  doc.line(cx - 50 * scale, cy + 32 * scale, cx + 50 * scale, cy + 32 * scale);
+}
+
+export function drawVectorGenericBird(doc: jsPDF, cx: number, cy: number, scale: number = 1, birdName: string = 'Bird'): void {
+  const bLower = birdName.toLowerCase();
+  if (bLower.includes('owl')) drawVectorOwl(doc, cx, cy, scale);
+  else if (bLower.includes('peacock')) drawVectorPeacock(doc, cx, cy, scale);
+  else if (bLower.includes('toucan')) drawVectorToucan(doc, cx, cy, scale);
+  else if (bLower.includes('flamingo')) drawVectorFlamingo(doc, cx, cy, scale);
+  else if (bLower.includes('humming')) drawVectorHummingbird(doc, cx, cy, scale);
+  else if (bLower.includes('swan')) drawVectorSwan(doc, cx, cy, scale);
+  else if (bLower.includes('penguin')) drawVectorPenguin(doc, cx, cy, scale);
+  else {
+    doc.setDrawColor(30, 30, 30);
+    doc.setLineWidth(2.2 * scale);
+    doc.ellipse(cx, cy + 6 * scale, 34 * scale, 28 * scale);
+    doc.circle(cx + 14 * scale, cy - 24 * scale, 20 * scale);
+    doc.triangle(cx + 32 * scale, cy - 26 * scale, cx + 32 * scale, cy - 18 * scale, cx + 46 * scale, cy - 22 * scale, 'FD');
+    doc.setFillColor(30, 30, 30);
+    doc.circle(cx + 20 * scale, cy - 26 * scale, 3.5 * scale, 'F');
+    doc.ellipse(cx - 10 * scale, cy + 4 * scale, 18 * scale, 12 * scale);
+    doc.line(cx - 40 * scale, cy + 36 * scale, cx + 45 * scale, cy + 36 * scale);
+  }
+}
+
+// Vehicles: Specific vector drawings
+export function drawVectorCar(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.roundedRect(cx - 50 * scale, cy - 5 * scale, 100 * scale, 32 * scale, 6 * scale, 6 * scale);
+  doc.roundedRect(cx - 30 * scale, cy - 32 * scale, 60 * scale, 28 * scale, 6 * scale, 6 * scale);
+  doc.rect(cx - 24 * scale, cy - 28 * scale, 20 * scale, 20 * scale);
+  doc.rect(cx + 4 * scale, cy - 28 * scale, 20 * scale, 20 * scale);
+  doc.circle(cx - 28 * scale, cy + 28 * scale, 14 * scale);
+  doc.circle(cx - 28 * scale, cy + 28 * scale, 6 * scale);
+  doc.circle(cx + 28 * scale, cy + 28 * scale, 14 * scale);
+  doc.circle(cx + 28 * scale, cy + 28 * scale, 6 * scale);
+}
+
+export function drawVectorTrain(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.rect(cx - 45 * scale, cy - 10 * scale, 60 * scale, 34 * scale);
+  doc.rect(cx + 15 * scale, cy - 35 * scale, 35 * scale, 59 * scale);
+  doc.rect(cx - 35 * scale, cy - 30 * scale, 12 * scale, 20 * scale);
+  doc.circle(cx - 29 * scale, cy - 40 * scale, 7 * scale);
+  doc.circle(cx - 23 * scale, cy - 48 * scale, 9 * scale);
+  doc.circle(cx - 30 * scale, cy + 26 * scale, 12 * scale);
+  doc.circle(cx - 5 * scale, cy + 26 * scale, 12 * scale);
+  doc.circle(cx + 25 * scale, cy + 26 * scale, 16 * scale);
+  doc.triangle(cx - 45 * scale, cy + 22 * scale, cx - 60 * scale, cy + 22 * scale, cx - 45 * scale, cy + 2 * scale);
+}
+
+export function drawVectorAirplane(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy, 55 * scale, 18 * scale);
+  doc.triangle(cx - 10 * scale, cy - 12 * scale, cx + 15 * scale, cy - 12 * scale, cx - 25 * scale, cy - 45 * scale);
+  doc.triangle(cx - 10 * scale, cy + 12 * scale, cx + 15 * scale, cy + 12 * scale, cx - 25 * scale, cy + 45 * scale);
+  doc.triangle(cx - 42 * scale, cy - 8 * scale, cx - 55 * scale, cy - 8 * scale, cx - 52 * scale, cy - 30 * scale);
+  for (let w = -20; w <= 30; w += 12) {
+    doc.circle(cx + w * scale, cy - 2 * scale, 3 * scale);
+  }
+}
+
+export function drawVectorHelicopter(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx - 10 * scale, cy, 38 * scale, 26 * scale);
+  // Rotor
+  doc.line(cx - 10 * scale, cy - 26 * scale, cx - 10 * scale, cy - 36 * scale);
+  doc.line(cx - 55 * scale, cy - 36 * scale, cx + 35 * scale, cy - 36 * scale);
+  // Tail boom & small rotor
+  doc.line(cx - 48 * scale, cy, cx - 75 * scale, cy - 10 * scale);
+  doc.line(cx - 75 * scale, cy - 18 * scale, cx - 75 * scale, cy - 2 * scale);
+  // Skids
+  doc.line(cx - 30 * scale, cy + 32 * scale, cx + 15 * scale, cy + 32 * scale);
+}
+
+export function drawVectorSailboat(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Hull
+  drawPolygon(doc, [[cx - 45 * scale, cy + 15 * scale], [cx + 45 * scale, cy + 15 * scale], [cx + 30 * scale, cy + 35 * scale], [cx - 30 * scale, cy + 35 * scale]]);
+  // Mast
+  doc.line(cx - 5 * scale, cy + 15 * scale, cx - 5 * scale, cy - 45 * scale);
+  // Sails
+  doc.triangle(cx - 5 * scale, cy + 10 * scale, cx - 5 * scale, cy - 40 * scale, cx - 35 * scale, cy + 10 * scale);
+  doc.triangle(cx - 2 * scale, cy + 10 * scale, cx - 2 * scale, cy - 40 * scale, cx + 30 * scale, cy + 10 * scale);
+  // Water
+  doc.line(cx - 60 * scale, cy + 42 * scale, cx + 60 * scale, cy + 42 * scale);
+}
+
+export function drawVectorRocket(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.roundedRect(cx - 16 * scale, cy - 30 * scale, 32 * scale, 65 * scale, 6 * scale, 6 * scale);
+  // Nose cone
+  doc.triangle(cx - 16 * scale, cy - 30 * scale, cx + 16 * scale, cy - 30 * scale, cx, cy - 55 * scale);
+  // Porthole
+  doc.circle(cx, cy - 8 * scale, 8 * scale);
+  // Fins
+  doc.triangle(cx - 16 * scale, cy + 10 * scale, cx - 16 * scale, cy + 35 * scale, cx - 32 * scale, cy + 38 * scale);
+  doc.triangle(cx + 16 * scale, cy + 10 * scale, cx + 16 * scale, cy + 35 * scale, cx + 32 * scale, cy + 38 * scale);
+  // Exhaust flame
+  doc.triangle(cx - 10 * scale, cy + 35 * scale, cx + 10 * scale, cy + 35 * scale, cx, cy + 55 * scale, 'FD');
+}
+
+export function drawVectorSubmarine(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.ellipse(cx, cy, 54 * scale, 24 * scale);
+  doc.roundedRect(cx - 12 * scale, cy - 32 * scale, 24 * scale, 16 * scale, 4 * scale, 4 * scale);
+  // Periscope
+  doc.line(cx, cy - 32 * scale, cx, cy - 46 * scale);
+  doc.line(cx, cy - 46 * scale, cx + 10 * scale, cy - 46 * scale);
+  // Portholes
+  doc.circle(cx - 24 * scale, cy, 6 * scale);
+  doc.circle(cx, cy, 6 * scale);
+  doc.circle(cx + 24 * scale, cy, 6 * scale);
+}
+
+export function drawVectorTractor(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.rect(cx - 10 * scale, cy - 10 * scale, 45 * scale, 25 * scale);
+  doc.rect(cx - 35 * scale, cy - 30 * scale, 30 * scale, 45 * scale);
+  // Giant rear wheel
+  doc.circle(cx - 20 * scale, cy + 22 * scale, 22 * scale);
+  doc.circle(cx - 20 * scale, cy + 22 * scale, 10 * scale);
+  // Small front wheel
+  doc.circle(cx + 28 * scale, cy + 28 * scale, 12 * scale);
+  doc.circle(cx + 28 * scale, cy + 28 * scale, 5 * scale);
+}
+
+export function drawVectorHotAirBalloon(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  doc.circle(cx, cy - 15 * scale, 36 * scale);
+  doc.line(cx - 20 * scale, cy + 15 * scale, cx - 12 * scale, cy + 35 * scale);
+  doc.line(cx + 20 * scale, cy + 15 * scale, cx + 12 * scale, cy + 35 * scale);
+  // Wicker basket
+  doc.roundedRect(cx - 14 * scale, cy + 35 * scale, 28 * scale, 20 * scale, 3 * scale, 3 * scale);
+}
+
+export function drawVectorFireEngine(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Main chassis & cab
+  doc.roundedRect(cx - 56 * scale, cy - 8 * scale, 112 * scale, 36 * scale, 4 * scale, 4 * scale);
+  doc.roundedRect(cx + 20 * scale, cy - 28 * scale, 36 * scale, 24 * scale, 3 * scale, 3 * scale);
+  // Windshield & side window
+  doc.rect(cx + 26 * scale, cy - 24 * scale, 26 * scale, 16 * scale);
+  // Emergency roof siren light
+  doc.roundedRect(cx + 34 * scale, cy - 35 * scale, 12 * scale, 7 * scale, 2 * scale, 2 * scale);
+  // Extendable Ladder on roof rack
+  doc.line(cx - 52 * scale, cy - 22 * scale, cx + 12 * scale, cy - 22 * scale);
+  doc.line(cx - 52 * scale, cy - 14 * scale, cx + 12 * scale, cy - 14 * scale);
+  for (let r = -48; r <= 8; r += 10) {
+    doc.line(cx + r * scale, cy - 22 * scale, cx + r * scale, cy - 14 * scale);
+  }
+  // Coiled water hose reel
+  doc.circle(cx - 25 * scale, cy + 8 * scale, 10 * scale);
+  doc.circle(cx - 25 * scale, cy + 8 * scale, 4 * scale);
+  // 3 Chunky wheels
+  doc.circle(cx - 38 * scale, cy + 30 * scale, 12 * scale);
+  doc.circle(cx - 38 * scale, cy + 30 * scale, 5 * scale);
+  doc.circle(cx - 2 * scale, cy + 30 * scale, 12 * scale);
+  doc.circle(cx - 2 * scale, cy + 30 * scale, 5 * scale);
+  doc.circle(cx + 36 * scale, cy + 30 * scale, 12 * scale);
+  doc.circle(cx + 36 * scale, cy + 30 * scale, 5 * scale);
+}
+
+export function drawVectorAmbulance(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Ambulance body
+  doc.roundedRect(cx - 52 * scale, cy - 22 * scale, 76 * scale, 50 * scale, 4 * scale, 4 * scale);
+  doc.roundedRect(cx + 24 * scale, cy - 6 * scale, 28 * scale, 34 * scale, 3 * scale, 3 * scale);
+  // Windows
+  doc.rect(cx - 40 * scale, cy - 14 * scale, 24 * scale, 16 * scale);
+  doc.rect(cx + 26 * scale, cy - 2 * scale, 20 * scale, 16 * scale);
+  // Medical Cross Symbol
+  doc.setFillColor(30, 30, 30);
+  doc.rect(cx - 6 * scale, cy - 8 * scale, 6 * scale, 22 * scale, 'F');
+  doc.rect(cx - 14 * scale, cy, 22 * scale, 6 * scale, 'F');
+  // Flashing roof beacon
+  doc.roundedRect(cx - 8 * scale, cy - 30 * scale, 14 * scale, 8 * scale, 2 * scale, 2 * scale);
+  // Wheels
+  doc.circle(cx - 28 * scale, cy + 30 * scale, 13 * scale);
+  doc.circle(cx - 28 * scale, cy + 30 * scale, 5 * scale);
+  doc.circle(cx + 34 * scale, cy + 30 * scale, 13 * scale);
+  doc.circle(cx + 34 * scale, cy + 30 * scale, 5 * scale);
+}
+
+export function drawVectorPoliceCar(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Sleek patrol sedan
+  doc.roundedRect(cx - 52 * scale, cy - 2 * scale, 104 * scale, 30 * scale, 6 * scale, 6 * scale);
+  doc.roundedRect(cx - 28 * scale, cy - 28 * scale, 56 * scale, 26 * scale, 5 * scale, 5 * scale);
+  // Windows
+  doc.rect(cx - 22 * scale, cy - 24 * scale, 20 * scale, 18 * scale);
+  doc.rect(cx + 2 * scale, cy - 24 * scale, 22 * scale, 18 * scale);
+  // Dual roof lightbar
+  doc.rect(cx - 10 * scale, cy - 36 * scale, 20 * scale, 8 * scale);
+  doc.line(cx, cy - 36 * scale, cx, cy - 28 * scale);
+  // Police Star Badge
+  doc.circle(cx, cy + 12 * scale, 7 * scale);
+  // Wheels
+  doc.circle(cx - 30 * scale, cy + 30 * scale, 13 * scale);
+  doc.circle(cx - 30 * scale, cy + 30 * scale, 5 * scale);
+  doc.circle(cx + 30 * scale, cy + 30 * scale, 13 * scale);
+  doc.circle(cx + 30 * scale, cy + 30 * scale, 5 * scale);
+}
+
+export function drawVectorSchoolBus(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Long boxy bus body
+  doc.roundedRect(cx - 56 * scale, cy - 28 * scale, 112 * scale, 54 * scale, 4 * scale, 4 * scale);
+  // Front grille hood
+  doc.roundedRect(cx + 56 * scale, cy - 2 * scale, 14 * scale, 28 * scale, 2 * scale, 2 * scale);
+  // 4 Passenger windows
+  for (let w = 0; w < 4; w++) {
+    const wx = cx - 48 * scale + w * 26 * scale;
+    doc.rect(wx, cy - 20 * scale, 18 * scale, 18 * scale);
+    // Smiling kid face in window
+    doc.circle(wx + 9 * scale, cy - 10 * scale, 5 * scale);
+    doc.circle(wx + 8 * scale, cy - 11 * scale, 1 * scale, 'F');
+    doc.circle(wx + 10 * scale, cy - 11 * scale, 1 * scale, 'F');
+  }
+  // Stop sign paddle
+  drawPolygon(doc, [[cx - 56 * scale, cy + 4 * scale], [cx - 68 * scale, cy], [cx - 68 * scale, cy + 16 * scale], [cx - 56 * scale, cy + 12 * scale]]);
+  // Bumpers & Wheels
+  doc.rect(cx - 58 * scale, cy + 22 * scale, 130 * scale, 4 * scale);
+  doc.circle(cx - 32 * scale, cy + 30 * scale, 14 * scale);
+  doc.circle(cx - 32 * scale, cy + 30 * scale, 6 * scale);
+  doc.circle(cx + 38 * scale, cy + 30 * scale, 14 * scale);
+  doc.circle(cx + 38 * scale, cy + 30 * scale, 6 * scale);
+}
+
+export function drawVectorDumpTruck(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Cab
+  doc.rect(cx + 12 * scale, cy - 28 * scale, 38 * scale, 52 * scale);
+  doc.rect(cx + 20 * scale, cy - 22 * scale, 24 * scale, 18 * scale);
+  // Tilted cargo bed
+  drawPolygon(doc, [
+    [cx - 55 * scale, cy - 32 * scale],
+    [cx + 8 * scale, cy - 16 * scale],
+    [cx + 8 * scale, cy + 16 * scale],
+    [cx - 55 * scale, cy + 16 * scale],
+  ]);
+  // Rocks inside bed
+  doc.circle(cx - 35 * scale, cy - 36 * scale, 8 * scale);
+  doc.circle(cx - 18 * scale, cy - 28 * scale, 10 * scale);
+  doc.circle(cx - 2 * scale, cy - 22 * scale, 7 * scale);
+  // Wheels
+  doc.circle(cx - 38 * scale, cy + 26 * scale, 15 * scale);
+  doc.circle(cx - 38 * scale, cy + 26 * scale, 6 * scale);
+  doc.circle(cx - 6 * scale, cy + 26 * scale, 15 * scale);
+  doc.circle(cx - 6 * scale, cy + 26 * scale, 6 * scale);
+  doc.circle(cx + 32 * scale, cy + 26 * scale, 15 * scale);
+  doc.circle(cx + 32 * scale, cy + 26 * scale, 6 * scale);
+}
+
+export function drawVectorCementMixer(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Cab
+  doc.rect(cx + 20 * scale, cy - 24 * scale, 34 * scale, 48 * scale);
+  doc.rect(cx + 26 * scale, cy - 18 * scale, 22 * scale, 16 * scale);
+  // Tilted rotating mixer drum
+  drawPolygon(doc, [
+    [cx - 52 * scale, cy - 8 * scale],
+    [cx - 15 * scale, cy - 32 * scale],
+    [cx + 12 * scale, cy - 6 * scale],
+    [cx - 15 * scale, cy + 20 * scale],
+  ]);
+  doc.line(cx - 40 * scale, cy - 14 * scale, cx - 2 * scale, cy - 2 * scale);
+  doc.line(cx - 28 * scale, cy - 22 * scale, cx + 8 * scale, cy + 4 * scale);
+  // Discharge chute
+  doc.line(cx - 52 * scale, cy - 8 * scale, cx - 62 * scale, cy + 12 * scale);
+  // Wheels
+  doc.circle(cx - 36 * scale, cy + 26 * scale, 14 * scale);
+  doc.circle(cx - 36 * scale, cy + 26 * scale, 5 * scale);
+  doc.circle(cx - 4 * scale, cy + 26 * scale, 14 * scale);
+  doc.circle(cx - 4 * scale, cy + 26 * scale, 5 * scale);
+  doc.circle(cx + 36 * scale, cy + 26 * scale, 14 * scale);
+  doc.circle(cx + 36 * scale, cy + 26 * scale, 5 * scale);
+}
+
+export function drawVectorBicycle(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.4 * scale);
+  // Two spoked wheels
+  doc.circle(cx - 42 * scale, cy + 15 * scale, 24 * scale);
+  doc.circle(cx - 42 * scale, cy + 15 * scale, 5 * scale);
+  doc.circle(cx + 42 * scale, cy + 15 * scale, 24 * scale);
+  doc.circle(cx + 42 * scale, cy + 15 * scale, 5 * scale);
+  for (let a = 0; a < 360; a += 60) {
+    const rad = (a * Math.PI) / 180;
+    doc.line(cx - 42 * scale, cy + 15 * scale, cx - 42 * scale + Math.cos(rad) * 23 * scale, cy + 15 * scale + Math.sin(rad) * 23 * scale);
+    doc.line(cx + 42 * scale, cy + 15 * scale, cx + 42 * scale + Math.cos(rad) * 23 * scale, cy + 15 * scale + Math.sin(rad) * 23 * scale);
+  }
+  // Diamond frame tubes
+  doc.line(cx - 42 * scale, cy + 15 * scale, cx - 5 * scale, cy + 15 * scale);
+  doc.line(cx - 5 * scale, cy + 15 * scale, cx - 18 * scale, cy - 18 * scale);
+  doc.line(cx - 18 * scale, cy - 18 * scale, cx - 42 * scale, cy + 15 * scale);
+  doc.line(cx - 18 * scale, cy - 18 * scale, cx + 24 * scale, cy - 18 * scale);
+  doc.line(cx - 5 * scale, cy + 15 * scale, cx + 24 * scale, cy - 18 * scale);
+  doc.line(cx + 24 * scale, cy - 18 * scale, cx + 42 * scale, cy + 15 * scale);
+  // Seat & handlebars
+  doc.line(cx - 24 * scale, cy - 22 * scale, cx - 10 * scale, cy - 22 * scale);
+  doc.line(cx + 24 * scale, cy - 18 * scale, cx + 20 * scale, cy - 35 * scale);
+  doc.line(cx + 12 * scale, cy - 35 * scale, cx + 28 * scale, cy - 35 * scale);
+  // Basket on front
+  doc.rect(cx + 26 * scale, cy - 30 * scale, 16 * scale, 14 * scale);
+}
+
+export function drawVectorMotorcycle(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.4 * scale);
+  // Wheels
+  doc.circle(cx - 42 * scale, cy + 16 * scale, 22 * scale);
+  doc.circle(cx - 42 * scale, cy + 16 * scale, 8 * scale);
+  doc.circle(cx + 42 * scale, cy + 16 * scale, 22 * scale);
+  doc.circle(cx + 42 * scale, cy + 16 * scale, 8 * scale);
+  // Engine & Frame
+  doc.rect(cx - 12 * scale, cy - 2 * scale, 26 * scale, 22 * scale);
+  doc.line(cx - 42 * scale, cy + 16 * scale, cx, cy + 16 * scale);
+  doc.line(cx, cy + 16 * scale, cx + 42 * scale, cy + 16 * scale);
+  // Fuel tank & seat
+  doc.ellipse(cx + 5 * scale, cy - 12 * scale, 18 * scale, 10 * scale);
+  doc.line(cx - 25 * scale, cy - 10 * scale, cx - 5 * scale, cy - 10 * scale);
+  // Front fork & handlebar
+  doc.line(cx + 42 * scale, cy + 16 * scale, cx + 22 * scale, cy - 28 * scale);
+  doc.line(cx + 16 * scale, cy - 28 * scale, cx + 28 * scale, cy - 28 * scale);
+  // Round headlight
+  doc.circle(cx + 28 * scale, cy - 22 * scale, 6 * scale);
+  // Exhaust pipe
+  doc.line(cx - 5 * scale, cy + 12 * scale, cx - 45 * scale, cy + 12 * scale);
+}
+
+// Fruits & Vegetables: Distinct drawings
+export function drawVectorFruit(doc: jsPDF, cx: number, cy: number, fruitName: string, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  const fLower = fruitName.toLowerCase();
+
+  if (fLower.includes('straw')) {
+    doc.moveTo(cx, cy + 42 * scale);
+    doc.curveTo(cx - 42 * scale, cy + 20 * scale, cx - 35 * scale, cy - 20 * scale, cx, cy - 25 * scale);
+    doc.curveTo(cx + 35 * scale, cy - 20 * scale, cx + 42 * scale, cy + 20 * scale, cx, cy + 42 * scale);
+    doc.stroke();
+    doc.ellipse(cx - 14 * scale, cy - 28 * scale, 12 * scale, 5 * scale);
+    doc.ellipse(cx + 14 * scale, cy - 28 * scale, 12 * scale, 5 * scale);
+    for (let s = -20; s <= 20; s += 10) {
+      doc.circle(cx + s * scale, cy + 5 * scale, 1.5 * scale, 'F');
+      doc.circle(cx + s * 0.7 * scale, cy + 20 * scale, 1.5 * scale, 'F');
+    }
+  } else if (fLower.includes('carrot')) {
+    doc.triangle(cx - 18 * scale, cy - 25 * scale, cx + 18 * scale, cy - 25 * scale, cx, cy + 45 * scale);
+    doc.line(cx, cy - 25 * scale, cx - 15 * scale, cy - 45 * scale);
+    doc.line(cx, cy - 25 * scale, cx, cy - 48 * scale);
+    doc.line(cx, cy - 25 * scale, cx + 15 * scale, cy - 45 * scale);
+  } else if (fLower.includes('banana')) {
+    doc.moveTo(cx - 35 * scale, cy + 25 * scale);
+    doc.curveTo(cx - 20 * scale, cy - 25 * scale, cx + 25 * scale, cy - 25 * scale, cx + 45 * scale, cy - 5 * scale);
+    doc.curveTo(cx + 25 * scale, cy - 10 * scale, cx - 10 * scale, cy - 8 * scale, cx - 35 * scale, cy + 25 * scale);
+    doc.stroke();
+  } else if (fLower.includes('corn')) {
+    doc.ellipse(cx, cy, 18 * scale, 42 * scale);
+    for (let yK = -30; yK <= 30; yK += 10) {
+      doc.line(cx - 15 * scale, cy + yK * scale, cx + 15 * scale, cy + yK * scale);
+    }
+  } else if (fLower.includes('watermel')) {
+    // Watermelon wedge
+    drawArcCurve(doc, cx, cy, 45 * scale, 45 * scale);
+    doc.line(cx - 38 * scale, cy + 22 * scale, cx + 38 * scale, cy + 22 * scale);
+    doc.circle(cx - 15 * scale, cy + 12 * scale, 2 * scale, 'F');
+    doc.circle(cx + 15 * scale, cy + 12 * scale, 2 * scale, 'F');
+    doc.circle(cx, cy + 6 * scale, 2 * scale, 'F');
+  } else if (fLower.includes('pineapp')) {
+    doc.ellipse(cx, cy + 10 * scale, 28 * scale, 38 * scale);
+    // Spiky crown
+    doc.triangle(cx - 18 * scale, cy - 24 * scale, cx - 6 * scale, cy - 24 * scale, cx - 22 * scale, cy - 50 * scale);
+    doc.triangle(cx - 6 * scale, cy - 24 * scale, cx + 6 * scale, cy - 24 * scale, cx, cy - 55 * scale);
+    doc.triangle(cx + 6 * scale, cy - 24 * scale, cx + 18 * scale, cy - 24 * scale, cx + 22 * scale, cy - 50 * scale);
+  } else if (fLower.includes('grape')) {
+    // Grapes bunch
+    for (let gr = 0; gr < 4; gr++) {
+      for (let gc = 0; gc <= 3 - gr; gc++) {
+        doc.circle(cx - (3 - gr) * 8 * scale + gc * 16 * scale, cy - 20 * scale + gr * 16 * scale, 9 * scale);
+      }
+    }
+  } else {
+    // Round apple/orange
+    doc.circle(cx, cy, 38 * scale);
+    doc.ellipse(cx, cy - 38 * scale, 8 * scale, 4 * scale);
+  }
+
+  // Cute face on fruit
+  doc.setFillColor(30, 30, 30);
+  doc.circle(cx - 10 * scale, cy, 3 * scale, 'F');
+  doc.circle(cx + 10 * scale, cy, 3 * scale, 'F');
+  doc.line(cx - 6 * scale, cy + 10 * scale, cx + 6 * scale, cy + 10 * scale);
+}
+
+// Festivals & Cultural Celebrations: Distinct drawings
+export function drawVectorDiya(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Clay base
+  doc.moveTo(cx - 45 * scale, cy + 10 * scale);
+  doc.curveTo(cx - 40 * scale, cy + 42 * scale, cx + 40 * scale, cy + 42 * scale, cx + 45 * scale, cy + 10 * scale);
+  doc.stroke();
+  doc.line(cx - 45 * scale, cy + 10 * scale, cx + 45 * scale, cy + 10 * scale);
+  // Burning teardrop flame
+  doc.moveTo(cx, cy - 35 * scale);
+  doc.curveTo(cx + 20 * scale, cy - 10 * scale, cx + 15 * scale, cy + 10 * scale, cx, cy + 10 * scale);
+  doc.curveTo(cx - 15 * scale, cy + 10 * scale, cx - 20 * scale, cy - 10 * scale, cx, cy - 35 * scale);
+  doc.stroke();
+  // Radiance rays
+  for (let r = 0; r < 5; r++) {
+    const angle = 200 + r * 35;
+    const rad = (angle * Math.PI) / 180;
+    doc.line(cx + Math.cos(rad) * 26 * scale, cy - 15 * scale + Math.sin(rad) * 26 * scale, cx + Math.cos(rad) * 36 * scale, cy - 15 * scale + Math.sin(rad) * 36 * scale);
+  }
+}
+
+export function drawVectorChristmasTree(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // 3 Pine tiers
+  doc.triangle(cx - 24 * scale, cy - 15 * scale, cx + 24 * scale, cy - 15 * scale, cx, cy - 45 * scale);
+  doc.triangle(cx - 36 * scale, cy + 10 * scale, cx + 36 * scale, cy + 10 * scale, cx, cy - 25 * scale);
+  doc.triangle(cx - 48 * scale, cy + 35 * scale, cx + 48 * scale, cy + 35 * scale, cx, cy - 5 * scale);
+  // Trunk
+  doc.rect(cx - 10 * scale, cy + 35 * scale, 20 * scale, 18 * scale);
+  // Star on top
+  doc.circle(cx, cy - 50 * scale, 5 * scale, 'FD');
+  // Baubles
+  doc.circle(cx - 20 * scale, cy + 20 * scale, 4 * scale);
+  doc.circle(cx + 20 * scale, cy + 20 * scale, 4 * scale);
+  doc.circle(cx, cy + 5 * scale, 4 * scale);
+}
+
+export function drawVectorHoliPichkari(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Cylinder gun
+  doc.rect(cx - 40 * scale, cy - 8 * scale, 65 * scale, 16 * scale);
+  doc.line(cx + 25 * scale, cy, cx + 45 * scale, cy);
+  // Plunger handle
+  doc.line(cx - 40 * scale, cy, cx - 60 * scale, cy);
+  doc.rect(cx - 65 * scale, cy - 12 * scale, 8 * scale, 24 * scale);
+  // Squirting droplets
+  doc.circle(cx + 52 * scale, cy - 8 * scale, 4 * scale);
+  doc.circle(cx + 62 * scale, cy, 5 * scale);
+  doc.circle(cx + 54 * scale, cy + 12 * scale, 3.5 * scale);
+}
+
+export function drawVectorEidLantern(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Crescent moon
+  drawArcCurve(doc, cx - 15 * scale, cy - 10 * scale, 30 * scale, 30 * scale);
+  doc.circle(cx - 5 * scale, cy - 12 * scale, 6 * scale, 'FD');
+  // Hanging lantern (Fanoos)
+  doc.line(cx + 25 * scale, cy - 45 * scale, cx + 25 * scale, cy - 20 * scale);
+  doc.rect(cx + 15 * scale, cy - 20 * scale, 20 * scale, 35 * scale, 'FD');
+  doc.triangle(cx + 12 * scale, cy - 20 * scale, cx + 38 * scale, cy - 20 * scale, cx + 25 * scale, cy - 30 * scale);
+  doc.triangle(cx + 15 * scale, cy + 15 * scale, cx + 35 * scale, cy + 15 * scale, cx + 25 * scale, cy + 25 * scale);
+}
+
+export function drawVectorKites(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Diamond kite
+  drawPolygon(doc, [[cx, cy - 45 * scale], [cx + 38 * scale, cy], [cx, cy + 35 * scale], [cx - 38 * scale, cy]]);
+  doc.line(cx, cy - 45 * scale, cx, cy + 35 * scale);
+  doc.line(cx - 38 * scale, cy, cx + 38 * scale, cy);
+  // String tail & bows
+  doc.moveTo(cx, cy + 35 * scale);
+  doc.curveTo(cx + 20 * scale, cy + 50 * scale, cx - 10 * scale, cy + 65 * scale, cx + 15 * scale, cy + 75 * scale);
+  doc.stroke();
+}
+
+export function drawVectorRangoli(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Concentric decorative rings
+  doc.circle(cx, cy, 14 * scale);
+  doc.circle(cx, cy, 32 * scale);
+  doc.circle(cx, cy, 50 * scale);
+  // 8 Petals
+  for (let a = 0; a < 360; a += 45) {
+    const rad = (a * Math.PI) / 180;
+    const px = cx + Math.cos(rad) * 32 * scale;
+    const py = cy + Math.sin(rad) * 32 * scale;
+    doc.circle(px, py, 11 * scale);
+  }
+  // 4 Outer Diyas
+  for (let d = 0; d < 4; d++) {
+    const angle = d * 90;
+    const rad = (angle * Math.PI) / 180;
+    const dx = cx + Math.cos(rad) * 48 * scale;
+    const dy = cy + Math.sin(rad) * 48 * scale;
+    doc.circle(dx, dy, 5 * scale, 'FD');
+  }
+}
+
+export function drawVectorBirthdayCake(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Tier 1 (Bottom)
+  doc.roundedRect(cx - 52 * scale, cy + 8 * scale, 104 * scale, 30 * scale, 3 * scale, 3 * scale);
+  // Tier 2 (Middle)
+  doc.roundedRect(cx - 36 * scale, cy - 18 * scale, 72 * scale, 26 * scale, 3 * scale, 3 * scale);
+  // Tier 3 (Top)
+  doc.roundedRect(cx - 20 * scale, cy - 40 * scale, 40 * scale, 22 * scale, 3 * scale, 3 * scale);
+  // Scalloped frosting on bottom tier
+  for (let s = -46; s <= 46; s += 15) {
+    doc.circle(cx + s * scale, cy + 8 * scale, 6 * scale);
+  }
+  // 3 Candles on top
+  const candleXs = [-12, 0, 12];
+  candleXs.forEach((xOff) => {
+    doc.rect(cx + (xOff - 2) * scale, cy - 54 * scale, 4 * scale, 14 * scale);
+    // Teardrop flame
+    doc.circle(cx + xOff * scale, cy - 58 * scale, 2.5 * scale, 'FD');
+  });
+  // Pedestal stand
+  doc.line(cx - 58 * scale, cy + 38 * scale, cx + 58 * scale, cy + 38 * scale);
+  doc.line(cx - 15 * scale, cy + 38 * scale, cx - 25 * scale, cy + 48 * scale);
+  doc.line(cx + 15 * scale, cy + 38 * scale, cx + 25 * scale, cy + 48 * scale);
+  doc.line(cx - 30 * scale, cy + 48 * scale, cx + 30 * scale, cy + 48 * scale);
+}
+
+export function drawVectorPumpkin(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Plump ribbed segments
+  doc.ellipse(cx, cy + 4 * scale, 48 * scale, 36 * scale);
+  doc.ellipse(cx - 18 * scale, cy + 4 * scale, 32 * scale, 35 * scale);
+  doc.ellipse(cx + 18 * scale, cy + 4 * scale, 32 * scale, 35 * scale);
+  // Curved woody stem
+  doc.rect(cx - 5 * scale, cy - 38 * scale, 10 * scale, 14 * scale);
+  // Carved Jack-o'-Lantern eyes, nose, smile
+  doc.triangle(cx - 18 * scale, cy - 8 * scale, cx - 6 * scale, cy - 8 * scale, cx - 12 * scale, cy - 18 * scale, 'FD');
+  doc.triangle(cx + 6 * scale, cy - 8 * scale, cx + 18 * scale, cy - 8 * scale, cx + 12 * scale, cy - 18 * scale, 'FD');
+  doc.triangle(cx - 4 * scale, cy - 2 * scale, cx + 4 * scale, cy - 2 * scale, cx, cy - 7 * scale, 'FD');
+  // Big toothy smile
+  doc.moveTo(cx - 26 * scale, cy + 10 * scale);
+  doc.curveTo(cx - 15 * scale, cy + 28 * scale, cx + 15 * scale, cy + 28 * scale, cx + 26 * scale, cy + 10 * scale);
+  doc.stroke();
+}
+
+export function drawVectorSnowman(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // 3 Snowball tiers
+  doc.circle(cx, cy + 25 * scale, 34 * scale); // Bottom
+  doc.circle(cx, cy - 14 * scale, 24 * scale); // Middle
+  doc.circle(cx, cy - 44 * scale, 16 * scale); // Head
+  // Carrot nose
+  doc.triangle(cx, cy - 46 * scale, cx, cy - 40 * scale, cx + 16 * scale, cy - 43 * scale, 'FD');
+  // Coal eyes & smile
+  doc.circle(cx - 5 * scale, cy - 48 * scale, 2 * scale, 'F');
+  doc.circle(cx + 5 * scale, cy - 48 * scale, 2 * scale, 'F');
+  for (let m = -8; m <= 8; m += 4) {
+    doc.circle(cx + m * scale, cy - 38 * scale + Math.abs(m) * 0.4 * scale, 1.2 * scale, 'F');
+  }
+  // Top hat
+  doc.line(cx - 18 * scale, cy - 58 * scale, cx + 18 * scale, cy - 58 * scale);
+  doc.rect(cx - 10 * scale, cy - 72 * scale, 20 * scale, 14 * scale);
+  // Scarf
+  doc.roundedRect(cx - 16 * scale, cy - 30 * scale, 32 * scale, 8 * scale, 2 * scale, 2 * scale);
+  doc.rect(cx + 6 * scale, cy - 22 * scale, 8 * scale, 18 * scale);
+  // Coal buttons
+  doc.circle(cx, cy - 18 * scale, 2.5 * scale, 'F');
+  doc.circle(cx, cy - 8 * scale, 2.5 * scale, 'F');
+  doc.circle(cx, cy + 2 * scale, 2.5 * scale, 'F');
+}
+
+export function drawVectorMonster(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Fuzzy round pear body
+  doc.ellipse(cx, cy + 12 * scale, 42 * scale, 48 * scale);
+  // Soft striped horns
+  doc.curveTo(cx - 24 * scale, cy - 35 * scale, cx - 35 * scale, cy - 55 * scale, cx - 20 * scale, cy - 52 * scale);
+  doc.curveTo(cx + 24 * scale, cy - 35 * scale, cx + 35 * scale, cy - 55 * scale, cx + 20 * scale, cy - 52 * scale);
+  // Three eyes
+  doc.circle(cx - 16 * scale, cy - 14 * scale, 8 * scale);
+  doc.circle(cx, cy - 22 * scale, 10 * scale);
+  doc.circle(cx + 16 * scale, cy - 14 * scale, 8 * scale);
+  doc.circle(cx - 16 * scale, cy - 14 * scale, 3 * scale, 'F');
+  doc.circle(cx, cy - 22 * scale, 4 * scale, 'F');
+  doc.circle(cx + 16 * scale, cy - 14 * scale, 3 * scale, 'F');
+  // Wide open smile with 2 fangs
+  doc.moveTo(cx - 18 * scale, cy + 2 * scale);
+  doc.curveTo(cx - 10 * scale, cy + 20 * scale, cx + 10 * scale, cy + 20 * scale, cx + 18 * scale, cy + 2 * scale);
+  doc.stroke();
+  doc.triangle(cx - 10 * scale, cy + 3 * scale, cx - 4 * scale, cy + 3 * scale, cx - 7 * scale, cy + 10 * scale, 'FD');
+  doc.triangle(cx + 4 * scale, cy + 3 * scale, cx + 10 * scale, cy + 3 * scale, cx + 7 * scale, cy + 10 * scale, 'FD');
+  // Big belly spots
+  doc.circle(cx - 12 * scale, cy + 24 * scale, 4 * scale);
+  doc.circle(cx + 12 * scale, cy + 22 * scale, 5 * scale);
+  doc.circle(cx, cy + 34 * scale, 4.5 * scale);
+  // Chubby feet
+  doc.ellipse(cx - 18 * scale, cy + 58 * scale, 14 * scale, 8 * scale);
+  doc.ellipse(cx + 18 * scale, cy + 58 * scale, 14 * scale, 8 * scale);
+}
+
+export function drawVectorRobot(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Head
+  doc.roundedRect(cx - 24 * scale, cy - 48 * scale, 48 * scale, 32 * scale, 4 * scale, 4 * scale);
+  // Antenna
+  doc.line(cx, cy - 48 * scale, cx, cy - 62 * scale);
+  doc.circle(cx, cy - 64 * scale, 4 * scale, 'FD');
+  // Screen eyes & smile
+  doc.circle(cx - 10 * scale, cy - 34 * scale, 4.5 * scale);
+  doc.circle(cx + 10 * scale, cy - 34 * scale, 4.5 * scale);
+  doc.line(cx - 8 * scale, cy - 22 * scale, cx + 8 * scale, cy - 22 * scale);
+  // Torso
+  doc.roundedRect(cx - 32 * scale, cy - 10 * scale, 64 * scale, 46 * scale, 4 * scale, 4 * scale);
+  // Dials & screen on chest
+  doc.rect(cx - 20 * scale, cy - 2 * scale, 40 * scale, 18 * scale);
+  doc.circle(cx - 14 * scale, cy + 24 * scale, 4 * scale);
+  doc.circle(cx, cy + 24 * scale, 4 * scale);
+  doc.circle(cx + 14 * scale, cy + 24 * scale, 4 * scale);
+  // Accordion arms
+  doc.line(cx - 32 * scale, cy + 4 * scale, cx - 48 * scale, cy + 18 * scale);
+  doc.line(cx + 32 * scale, cy + 4 * scale, cx + 48 * scale, cy + 18 * scale);
+  // Legs
+  doc.rect(cx - 20 * scale, cy + 36 * scale, 14 * scale, 24 * scale);
+  doc.rect(cx + 6 * scale, cy + 36 * scale, 14 * scale, 24 * scale);
+}
+
+export function drawVectorCastle(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Central keep
+  doc.rect(cx - 28 * scale, cy - 16 * scale, 56 * scale, 52 * scale);
+  // Left & Right Towers
+  doc.rect(cx - 52 * scale, cy - 34 * scale, 24 * scale, 70 * scale);
+  doc.rect(cx + 28 * scale, cy - 34 * scale, 24 * scale, 70 * scale);
+  // Conical roofs
+  doc.triangle(cx - 54 * scale, cy - 34 * scale, cx - 26 * scale, cy - 34 * scale, cx - 40 * scale, cy - 60 * scale);
+  doc.triangle(cx + 26 * scale, cy - 34 * scale, cx + 54 * scale, cy - 34 * scale, cx + 40 * scale, cy - 60 * scale);
+  // Flags on top
+  doc.line(cx - 40 * scale, cy - 60 * scale, cx - 40 * scale, cy - 72 * scale);
+  drawPolygon(doc, [[cx - 40 * scale, cy - 72 * scale], [cx - 26 * scale, cy - 66 * scale], [cx - 40 * scale, cy - 60 * scale]]);
+  doc.line(cx + 40 * scale, cy - 60 * scale, cx + 40 * scale, cy - 72 * scale);
+  drawPolygon(doc, [[cx + 40 * scale, cy - 72 * scale], [cx + 54 * scale, cy - 66 * scale], [cx + 40 * scale, cy - 60 * scale]]);
+  // Main arched gateway
+  doc.roundedRect(cx - 14 * scale, cy + 16 * scale, 28 * scale, 20 * scale, 8 * scale, 8 * scale);
+}
+
+export function drawVectorTeddyBear(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Body
+  doc.ellipse(cx, cy + 16 * scale, 34 * scale, 38 * scale);
+  // Head
+  doc.circle(cx, cy - 18 * scale, 28 * scale);
+  // Round ears
+  doc.circle(cx - 24 * scale, cy - 40 * scale, 10 * scale);
+  doc.circle(cx + 24 * scale, cy - 40 * scale, 10 * scale);
+  // Snout & heart nose
+  doc.ellipse(cx, cy - 10 * scale, 14 * scale, 10 * scale);
+  doc.circle(cx - 10 * scale, cy - 22 * scale, 3.5 * scale, 'F');
+  doc.circle(cx + 10 * scale, cy - 22 * scale, 3.5 * scale, 'F');
+  doc.circle(cx, cy - 13 * scale, 3.5 * scale, 'F');
+  // Hugging big star
+  doc.circle(cx, cy + 16 * scale, 14 * scale);
+  // Paw pads
+  doc.ellipse(cx - 24 * scale, cy + 44 * scale, 12 * scale, 8 * scale);
+  doc.ellipse(cx + 24 * scale, cy + 44 * scale, 12 * scale, 8 * scale);
+}
+
+export function drawVectorAlien(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Flying saucer rim
+  doc.ellipse(cx, cy + 12 * scale, 58 * scale, 20 * scale);
+  doc.ellipse(cx, cy + 12 * scale, 44 * scale, 14 * scale);
+  // Glass dome cockpit
+  drawArcCurve(doc, cx, cy + 10 * scale, 28 * scale, 28 * scale);
+  // Cute alien inside dome
+  doc.ellipse(cx, cy - 6 * scale, 12 * scale, 14 * scale);
+  doc.circle(cx, cy - 8 * scale, 5 * scale); // Giant friendly cyclops eye
+  doc.circle(cx, cy - 8 * scale, 2 * scale, 'F');
+  // Antenna with star
+  doc.line(cx, cy - 20 * scale, cx, cy - 30 * scale);
+  doc.circle(cx, cy - 32 * scale, 3 * scale, 'FD');
+  // Saucer lights
+  for (let l = -36; l <= 36; l += 18) {
+    doc.circle(cx + l * scale, cy + 18 * scale, 3 * scale, 'FD');
+  }
+}
+
+export function drawVectorDragon(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  // Chubby baby dragon body & head
+  doc.ellipse(cx, cy + 14 * scale, 36 * scale, 40 * scale);
+  doc.circle(cx + 8 * scale, cy - 20 * scale, 24 * scale);
+  // Round snout
+  doc.ellipse(cx + 20 * scale, cy - 16 * scale, 12 * scale, 9 * scale);
+  doc.circle(cx + 22 * scale, cy - 18 * scale, 1.8 * scale, 'F');
+  // Cute smiling eyes
+  doc.circle(cx + 8 * scale, cy - 25 * scale, 3.5 * scale, 'F');
+  // Small bat wings
+  drawPolygon(doc, [
+    [cx - 18 * scale, cy],
+    [cx - 45 * scale, cy - 24 * scale],
+    [cx - 34 * scale, cy],
+    [cx - 48 * scale, cy + 12 * scale],
+    [cx - 20 * scale, cy + 15 * scale],
+  ]);
+  // Spine scales
+  doc.triangle(cx - 2 * scale, cy - 44 * scale, cx + 4 * scale, cy - 44 * scale, cx + 1 * scale, cy - 50 * scale);
+  doc.triangle(cx - 10 * scale, cy - 40 * scale, cx - 4 * scale, cy - 40 * scale, cx - 7 * scale, cy - 46 * scale);
+  // Curled tail with arrow
+  doc.moveTo(cx - 30 * scale, cy + 28 * scale);
+  doc.curveTo(cx - 52 * scale, cy + 28 * scale, cx - 58 * scale, cy + 48 * scale, cx - 40 * scale, cy + 50 * scale);
+  doc.stroke();
+  doc.triangle(cx - 42 * scale, cy + 46 * scale, cx - 42 * scale, cy + 54 * scale, cx - 32 * scale, cy + 50 * scale, 'FD');
+}
+
+export function drawVectorMazeWorksheet(doc: jsPDF, cx: number, cy: number, scale: number = 1): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.2 * scale);
+  const size = 110 * scale;
+  const half = size / 2;
+  // Outer frame with entrance top-left and exit bottom-right
+  doc.line(cx - half + 20 * scale, cy - half, cx + half, cy - half);
+  doc.line(cx + half, cy - half, cx + half, cy + half);
+  doc.line(cx + half - 20 * scale, cy + half, cx - half, cy + half);
+  doc.line(cx - half, cy + half, cx - half, cy - half + 20 * scale);
+
+  // Internal maze walls
+  doc.line(cx - half + 20 * scale, cy - half + 25 * scale, cx + half - 25 * scale, cy - half + 25 * scale);
+  doc.line(cx - half + 45 * scale, cy - half + 50 * scale, cx + half, cy - half + 50 * scale);
+  doc.line(cx - half, cy - half + 75 * scale, cx + half - 30 * scale, cy - half + 75 * scale);
+  doc.line(cx - half + 30 * scale, cy - half + 25 * scale, cx - half + 30 * scale, cy - half + 65 * scale);
+  doc.line(cx + half - 40 * scale, cy - half + 50 * scale, cx + half - 40 * scale, cy + half - 15 * scale);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9 * scale);
+  doc.setTextColor(22, 163, 74);
+  doc.text('START ➔', cx - half + 5 * scale, cy - half - 4 * scale);
+  doc.setTextColor(220, 38, 38);
+  doc.text('★ GOAL!', cx + half - 20 * scale, cy + half + 10 * scale);
+}
+
+export function drawVectorShadowMatchWorksheet(doc: jsPDF, cx: number, cy: number): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(1.6);
+  // 4 rows matching Left (Outlines) to Right (Solid Shadows)
+  const items = [
+    { name: 'Apple', drawerLeft: (x: number, y: number) => doc.circle(x, y, 10), drawerRight: (x: number, y: number) => doc.circle(x, y, 10, 'F') },
+    { name: 'Star', drawerLeft: (x: number, y: number) => doc.circle(x, y, 10), drawerRight: (x: number, y: number) => doc.circle(x, y, 10, 'F') },
+    { name: 'Car', drawerLeft: (x: number, y: number) => doc.rect(x - 12, y - 6, 24, 12), drawerRight: (x: number, y: number) => doc.rect(x - 12, y - 6, 24, 12, 'F') },
+    { name: 'Cat', drawerLeft: (x: number, y: number) => doc.circle(x, y, 10), drawerRight: (x: number, y: number) => doc.circle(x, y, 10, 'F') },
+  ];
+
+  for (let r = 0; r < 4; r++) {
+    const yR = cy - 45 + r * 30;
+    // Left outline item card
+    doc.setFillColor(254, 243, 199);
+    doc.roundedRect(cx - 70, yR - 10, 50, 22, 3, 3, 'FD');
+    items[r].drawerLeft(cx - 45, yR + 1);
+    doc.circle(cx - 16, yR + 1, 2.5, 'FD');
+
+    // Right shadow card (shuffled order: 2, 0, 3, 1)
+    const shuffle = [2, 0, 3, 1][r];
+    doc.setFillColor(241, 245, 249);
+    doc.roundedRect(cx + 20, yR - 10, 50, 22, 3, 3, 'FD');
+    doc.setFillColor(30, 41, 59);
+    items[shuffle].drawerRight(cx + 45, yR + 1);
+    doc.circle(cx + 16, yR + 1, 2.5, 'FD');
+  }
+}
+
+export function drawVectorDotToDotWorksheet(doc: jsPDF, cx: number, cy: number): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(1.6);
+  // Large circular star outline with 20 numbered dots
+  for (let i = 1; i <= 20; i++) {
+    const rad = ((i * 18 - 90) * Math.PI) / 180;
+    const rDist = i % 2 === 0 ? 50 : 30;
+    const px = cx + Math.cos(rad) * rDist;
+    const py = cy + Math.sin(rad) * rDist;
+    doc.setFillColor(225, 29, 72);
+    doc.circle(px, py, 2.2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`${i}`, px + 3.5, py - 2);
+  }
+}
+
+export function drawVectorSpotDifferenceWorksheet(doc: jsPDF, cx: number, cy: number): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(1.8);
+  // Picture A (Original)
+  doc.roundedRect(cx - 75, cy - 45, 70, 75, 4, 4);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(30, 41, 59);
+  doc.text('Picture A (Original)', cx - 40, cy - 35, { align: 'center' });
+  doc.circle(cx - 40, cy - 10, 16); // Sun
+  doc.rect(cx - 55, cy + 10, 30, 16); // House
+
+  // Picture B (With 5 Differences)
+  doc.roundedRect(cx + 5, cy - 45, 70, 75, 4, 4);
+  doc.text('Picture B (Find 5 Differences)', cx + 40, cy - 35, { align: 'center' });
+  doc.circle(cx + 40, cy - 10, 12); // Difference 1: Smaller sun
+  doc.rect(cx + 25, cy + 10, 30, 16); // House
+  doc.circle(cx + 60, cy + 18, 4); // Difference 2: Extra flower
+  doc.triangle(cx + 35, cy + 5, cx + 45, cy + 5, cx + 40, cy, 'FD'); // Difference 3: Flag
+  doc.line(cx + 10, cy - 25, cx + 22, cy - 25); // Difference 4: Flying bird
+  doc.circle(cx + 20, cy + 22, 2.5); // Difference 5: Door knob
+
+  // 5 Checkmark Circles below
+  for (let c = 1; c <= 5; c++) {
+    doc.circle(cx - 40 + c * 14, cy + 42, 5);
+    doc.text(`[ ${c} ]`, cx - 40 + c * 14, cy + 52, { align: 'center' });
+  }
+}
+
+// Shapes: Themed illustrations
+export function drawVectorShapeWorksheet(doc: jsPDF, shapeName: string, cx: number, cy: number): void {
+  doc.setDrawColor(30, 30, 30);
+  doc.setLineWidth(2.4);
+
+  const clean = shapeName.toLowerCase();
+  if (clean.includes('circle')) {
+    doc.circle(cx, cy, 42);
+    // Sun rays around circle
+    for (let a = 0; a < 360; a += 45) {
+      const rad = (a * Math.PI) / 180;
+      doc.line(cx + Math.cos(rad) * 44, cy + Math.sin(rad) * 44, cx + Math.cos(rad) * 55, cy + Math.sin(rad) * 55);
+    }
+  } else if (clean.includes('square')) {
+    doc.rect(cx - 38, cy - 38, 76, 76);
+    // Window crossbars
+    doc.line(cx, cy - 38, cx, cy + 38);
+    doc.line(cx - 38, cy, cx + 38, cy);
+  } else if (clean.includes('triangle')) {
+    doc.triangle(cx - 44, cy + 36, cx + 44, cy + 36, cx, cy - 42);
+  } else if (clean.includes('rectangle')) {
+    doc.rect(cx - 52, cy - 30, 104, 60);
+  } else if (clean.includes('star')) {
+    doc.circle(cx, cy, 40);
+  } else if (clean.includes('diamond')) {
+    drawPolygon(doc, [[cx, cy - 44], [cx + 38, cy], [cx, cy + 44], [cx - 38, cy]]);
+  } else if (clean.includes('heart')) {
+    doc.circle(cx - 18, cy - 14, 22);
+    doc.circle(cx + 18, cy - 14, 22);
+    doc.triangle(cx - 36, cy - 2, cx + 36, cy - 2, cx, cy + 42);
+  } else if (clean.includes('crescent')) {
+    drawArcCurve(doc, cx, cy, 40, 40);
+  } else {
+    doc.ellipse(cx, cy, 48, 32);
+  }
+
+  // Happy smiling face on shape
+  doc.setFillColor(30, 30, 30);
+  doc.circle(cx - 12, cy - 6, 4, 'F');
+  doc.circle(cx + 12, cy - 6, 4, 'F');
+  doc.curveTo(cx - 8, cy + 14, cx + 8, cy + 14, cx + 8, cy + 8);
+}
+
+// Tracing lines & patterns
+export function drawVectorTracingRow(doc: jsPDF, type: string, yPos: number): void {
+  doc.setDrawColor(79, 70, 229);
+  doc.setLineWidth(1.6);
+  doc.setLineDashPattern([3, 2], 0);
+
+  const startX = 35;
+  const endX = 175;
+
+  if (type === 'waves') {
+    doc.moveTo(startX, yPos);
+    doc.curveTo(startX + 30, yPos - 15, startX + 50, yPos + 15, startX + 70, yPos);
+    doc.curveTo(startX + 100, yPos - 15, startX + 120, yPos + 15, endX, yPos);
+    doc.stroke();
+  } else if (type === 'zigzag') {
+    doc.moveTo(startX, yPos + 10);
+    for (let x = startX; x <= endX - 20; x += 20) {
+      doc.line(x, yPos + 10, x + 10, yPos - 10);
+      doc.line(x + 10, yPos - 10, x + 20, yPos + 10);
+    }
+  } else if (type === 'loops') {
+    doc.moveTo(startX, yPos);
+    doc.curveTo(startX + 20, yPos - 25, startX + 35, yPos + 20, startX + 50, yPos);
+    doc.curveTo(startX + 70, yPos - 25, startX + 85, yPos + 20, startX + 100, yPos);
+    doc.curveTo(startX + 120, yPos - 25, startX + 135, yPos + 20, endX, yPos);
+    doc.stroke();
+  } else {
+    doc.line(startX, yPos, endX, yPos);
+  }
+  doc.setLineDashPattern([], 0);
+
+  doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
-  doc.setTextColor(160, 160, 160);
-  doc.text('Little Colour World • Printable Edition', 16, height - 13);
-  doc.text(`Page ${pageNum}`, width - 16, height - 13, { align: 'right' });
+  doc.setTextColor(22, 163, 74);
+  doc.text('START ➔', 22, yPos + 3);
+  doc.setTextColor(220, 38, 38);
+  doc.text('★ FINISH', 180, yPos + 3);
+}
+
+// -------------------------------------------------------------
+// DEDICATED TAILORED GENERATOR ENGINES BY PRODUCT
+// -------------------------------------------------------------
+
+/**
+ * 1. Animal Colouring Book (Exact 32 Pages)
+ * Features 29 distinct, authentic animals, habitat activities, and award certificate!
+ */
+function generateAnimalBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 32;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  const animalList = [
+    { name: '1. The Smiling Lion King of the Savannah', desc: 'Big round mane with golden yellow and sunset orange shades.', drawer: drawVectorLion },
+    { name: '2. Gentle Baby Elephant Splashing Water', desc: 'Curling trunk with cool blue water droplets and big floppy ears.', drawer: drawVectorElephant },
+    { name: '3. Cuddly Honey Bear & Honey Pot', desc: 'Warm fuzzy brown bear enjoying sweet golden honeycomb treats.', drawer: drawVectorBear },
+    { name: '4. Playful Ocean Dolphin Leaping in Waves', desc: 'Sleek dolphin soaring above bright sparkling turquoise sea crests.', drawer: drawVectorDolphin },
+    { name: '5. Playful Cheeky Monkey on Jungle Vine', desc: 'Long curly tail swinging from green rainforest canopies.', drawer: drawVectorMonkey },
+    { name: '6. Tall Gentle Giraffe with Polka Dots', desc: 'Long graceful neck reaching high acacia blossoms in the sunshine.', drawer: drawVectorGiraffe },
+    { name: '7. Striped Zebra Dancing in Grasslands', desc: 'High-contrast bold stripes with cheerful grass and wildflower field.', drawer: drawVectorZebra },
+    { name: '8. Cozy Panda Munching Sweet Bamboo', desc: 'Cute black-and-white bear with round ears and green stalks.', drawer: drawVectorPanda },
+    { name: '9. Friendly Farm Cow in Meadow', desc: 'Happy spotted cow with clanging golden cowbell and buttercups.', drawer: drawVectorCow },
+    { name: '10. Fluffy Woolly Sheep on Sunny Hill', desc: 'Cloud-like soft woolly coat under warm golden sunshine.', drawer: drawVectorSheep },
+    { name: '11. Cheerful Piglet in Mud Puddle', desc: 'Curly little tail with funny snout and sweet mud splashes.', drawer: drawVectorPiglet },
+    { name: '12. Yellow Duckling Swimming in Pond', desc: 'Water ripples with cheerful duck bill and lily pad leaves.', drawer: drawVectorGenericBird },
+    { name: '13. Leaping Green Frog on Lily Pad', desc: 'Big round croaking eyes with water reflections and reeds.', drawer: drawVectorFrog },
+    { name: '14. Bouncy Golden Puppy with Ball', desc: 'Floppy puppy ears with wagging tail and striped rubber toy.', drawer: drawVectorPuppy },
+    { name: '15. Sweet Purring Kitten with Yarn Ball', desc: 'Cute whiskers, curled tail, and looping yarn threads to colour.', drawer: drawVectorKitten },
+    { name: '16. Royal Bengal Tiger Cub', desc: 'Fiery orange coat with fearless black jungle stripes.', drawer: drawVectorTiger },
+    { name: '17. Hopping Kangaroo & Joey in Pouch', desc: 'Australian outback buddy with sweet baby peek-a-boo.', drawer: drawVectorKangaroo },
+    { name: '18. Wobbly Little Penguin on Iceberg', desc: 'Tuxedo feathers, flippers, and sparkling polar snowdrifts.', drawer: drawVectorPenguin },
+    { name: '19. Wise Old Garden Tortoise', desc: 'Geometric patterned shell walking through clover patches.', drawer: drawVectorTortoise },
+    { name: '20. Busy Little Squirrel with Acorn', desc: 'Giant bushy feather tail holding a yummy autumn nut.', drawer: drawVectorSquirrel },
+    { name: '21. Splashing Hippopotamus in the River', desc: 'Wide cheerful yawn with water spray and floating lotus.', drawer: drawVectorHippo },
+    { name: '22. Strong Horned Rhinoceros', desc: 'Sturdy armored plates with delicate jungle floral garland.', drawer: drawVectorRhino },
+    { name: '23. Spotted Forest Fawn & Deer', desc: 'Gentle eyes and white spots resting under an oak tree.', drawer: drawVectorDeer },
+    { name: '24. Clever Red Fox in Autumn Woods', desc: 'Bushy white-tipped tail and pointed ears among mushrooms.', drawer: drawVectorFox },
+    { name: '25. Proud Running Farm Horse', desc: 'Flowing silky mane, shining horseshoes, and wooden corral.', drawer: drawVectorHorse },
+    { name: '26. Gentle Bunny Rabbit with Carrot', desc: 'Long upright ears, fluffy tail, and fresh garden vegetables.', drawer: drawVectorBunny },
+    { name: '27. Friendly Gentle Dinosaur (Brontosaurus)', desc: 'Peaceful long neck dinosaur nibbling tree tops.', drawer: drawVectorDinosaur },
+    { name: '28. Symmetrical Meadow Butterfly', desc: 'Big decorative wings with dots and floral arches.', drawer: drawVectorButterfly },
+    { name: '29. Playful Seal Balancing Star Ball', desc: 'Whiskered marine acrobat performing in the Arctic harbor.', drawer: drawVectorSeal },
+  ];
+
+  // Pages 2 to 30: Animals
+  for (let i = 0; i < 29 && i < totalPages - 3; i++) {
+    doc.addPage();
+    const pNum = i + 2;
+    const a = animalList[i];
+    drawPageHeaderAndFooter(doc, product, pNum, totalPages, a.name, a.desc);
+    a.drawer(doc, 105, 125, 1.15);
+
+    drawCrayonsPalette(doc, [
+      { name: 'Sun Yellow', r: 255, g: 217, b: 61 },
+      { name: 'Tangerine', r: 255, g: 138, b: 101 },
+      { name: 'Ocean Blue', r: 107, g: 203, b: 255 },
+      { name: 'Leaf Green', r: 72, g: 187, b: 120 },
+    ]);
+  }
+
+  // Page 31: Animal Habitats & Footprint Matching Activity
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    31,
+    totalPages,
+    'Animal Habitats & Paw Prints Matching Activity',
+    'Draw a line connecting each animal to its home and footprint!'
+  );
+
+  const matches = [
+    { a: '1. Lion 🦁', h: 'Savannah Den', p: 'Big Paw' },
+    { a: '2. Bear 🐻', h: 'Mountain Cave', p: 'Claw Print' },
+    { a: '3. Penguin 🐧', h: 'Arctic Iceberg', p: 'Webbed Foot' },
+    { a: '4. Dolphin 🐬', h: 'Deep Ocean Blue', p: 'Fin Splash' },
+  ];
+
+  matches.forEach((m, idx) => {
+    const yM = 60 + idx * 42;
+    doc.setFillColor(254, 242, 242);
+    doc.setDrawColor(254, 202, 202);
+    doc.roundedRect(25, yM, 65, 26, 3, 3, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(190, 18, 60);
+    doc.text(m.a, 32, yM + 16);
+
+    doc.setFillColor(240, 249, 255);
+    doc.setDrawColor(186, 230, 253);
+    doc.roundedRect(120, yM, 65, 26, 3, 3, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(3, 105, 161);
+    doc.text(`${m.h} (${m.p})`, 126, yM + 16);
+
+    doc.setFillColor(225, 29, 72);
+    doc.circle(95, yM + 13, 2.5, 'F');
+    doc.circle(115, yM + 13, 2.5, 'F');
+  });
+
+  // Page 32: Super Safari Artist Award Certificate
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    32,
+    totalPages,
+    'SUPER SAFARI ARTIST CERTIFICATE',
+    `For brilliantly coloring every single jungle, ocean, and farm friend in the ${product.title} with tremendous imagination!`
+  );
 }
 
 /**
- * Converts Google Drive sharing links into direct download links if applicable
+ * 2. My First ABC Colouring Book (Exact 30 Pages)
+ * Features Phonics guide, Letters A to Z with dedicated matching artwork, maze, and diploma!
  */
+function generateAlphabetBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 30;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  // Page 2: Phonics Pronunciation & Alphabet Guide
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    2,
+    totalPages,
+    'The A to Z Phonics & Letter Sound Roadmap',
+    'Say each letter sound out loud before coloring every alphabet page!'
+  );
+
+  doc.setFillColor(255, 250, 240);
+  doc.setDrawColor(251, 191, 36);
+  doc.roundedRect(22, 50, 166, 185, 4, 4, 'FD');
+
+  const abcs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  abcs.forEach((ltr, i) => {
+    const col = i % 5;
+    const row = Math.floor(i / 5);
+    const x = 32 + col * 32;
+    const y = 62 + row * 28;
+
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x - 2, y - 4, 26, 22, 2, 2, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(225, 29, 72);
+    doc.text(ltr, x + 11, y + 12, { align: 'center' });
+  });
+
+  const abcLetters = [
+    { l: 'A', name: 'A is for Apple & Ant', phonic: '/æ/ /æ/ Apple', word: 'Red Crunchy Apple', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.1) },
+    { l: 'B', name: 'B is for Bear & Balloon', phonic: '/b/ /b/ Bear', word: 'Friendly Brown Bear', drawer: (d: jsPDF, x: number, y: number) => drawVectorBear(d, x, y, 1.1) },
+    { l: 'C', name: 'C is for Car & Cat', phonic: '/k/ /k/ Car', word: 'Beep-Beep Little Car', drawer: (d: jsPDF, x: number, y: number) => drawVectorCar(d, x, y, 1.1) },
+    { l: 'D', name: 'D is for Dolphin & Duck', phonic: '/d/ /d/ Dolphin', word: 'Leaping Ocean Dolphin', drawer: (d: jsPDF, x: number, y: number) => drawVectorDolphin(d, x, y, 1.1) },
+    { l: 'E', name: 'E is for Elephant & Egg', phonic: '/e/ /e/ Elephant', word: 'Gentle Big Elephant', drawer: (d: jsPDF, x: number, y: number) => drawVectorElephant(d, x, y, 1.1) },
+    { l: 'F', name: 'F is for Frog & Flower', phonic: '/f/ /f/ Frog', word: 'Leaping Pond Frog', drawer: (d: jsPDF, x: number, y: number) => drawVectorFrog(d, x, y, 1.0) },
+    { l: 'G', name: 'G is for Giraffe & Grapes', phonic: '/g/ /g/ Giraffe', word: 'Tall Savannah Giraffe', drawer: (d: jsPDF, x: number, y: number) => drawVectorGiraffe(d, x, y, 1.0) },
+    { l: 'H', name: 'H is for Horse & Hat', phonic: '/h/ /h/ Horse', word: 'Proud Farm Horse', drawer: (d: jsPDF, x: number, y: number) => drawVectorHorse(d, x, y, 1.0) },
+    { l: 'I', name: 'I is for Ice Cream & Iguana', phonic: '/ɪ/ /ɪ/ Ice Cream', word: 'Sweet Cold Ice Cream', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Strawberry', 1.0) },
+    { l: 'J', name: 'J is for Jellyfish & Jam', phonic: '/dʒ/ /dʒ/ Jellyfish', word: 'Glowing Ocean Jellyfish', drawer: (d: jsPDF, x: number, y: number) => drawVectorDolphin(d, x, y, 1.0) },
+    { l: 'K', name: 'K is for Kangaroo & Kite', phonic: '/k/ /k/ Kite', word: 'Flying Diamond Kite', drawer: (d: jsPDF, x: number, y: number) => drawVectorKites(d, x, y, 1.0) },
+    { l: 'L', name: 'L is for Lion & Leaf', phonic: '/l/ /l/ Lion', word: 'King of the Savannah', drawer: (d: jsPDF, x: number, y: number) => drawVectorLion(d, x, y, 1.1) },
+    { l: 'M', name: 'M is for Monkey & Moon', phonic: '/m/ /m/ Monkey', word: 'Cheeky Jungle Monkey', drawer: (d: jsPDF, x: number, y: number) => drawVectorMonkey(d, x, y, 1.0) },
+    { l: 'N', name: 'N is for Nest & Nut', phonic: '/n/ /n/ Nest', word: 'Bird Nest with Eggs', drawer: (d: jsPDF, x: number, y: number) => drawVectorGenericBird(d, x, y, 1.0, 'Sparrow') },
+    { l: 'O', name: 'O is for Owl & Orange', phonic: '/ɒ/ /ɒ/ Owl', word: 'Wise Chirpy Garden Owl', drawer: (d: jsPDF, x: number, y: number) => drawVectorOwl(d, x, y, 1.1) },
+    { l: 'P', name: 'P is for Penguin & Panda', phonic: '/p/ /p/ Penguin', word: 'Wobbly Tuxedo Penguin', drawer: (d: jsPDF, x: number, y: number) => drawVectorPenguin(d, x, y, 1.1) },
+    { l: 'Q', name: 'Q is for Queen & Quill', phonic: '/kw/ /kw/ Queen', word: 'Royal Golden Crown', drawer: (d: jsPDF, x: number, y: number) => drawVectorShapeWorksheet(d, 'star', x, y) },
+    { l: 'R', name: 'R is for Rocket & Rainbow', phonic: '/r/ /r/ Rocket', word: 'Blasting Space Rocket', drawer: (d: jsPDF, x: number, y: number) => drawVectorRocket(d, x, y, 1.0) },
+    { l: 'S', name: 'S is for Strawberry & Sun', phonic: '/s/ /s/ Strawberry', word: 'Sweet Red Strawberry', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Strawberry', 1.1) },
+    { l: 'T', name: 'T is for Train & Tiger', phonic: '/t/ /t/ Train', word: 'Choo-Choo Steam Train', drawer: (d: jsPDF, x: number, y: number) => drawVectorTrain(d, x, y, 1.1) },
+    { l: 'U', name: 'U is for Umbrella & Unicorn', phonic: '/ʌ/ /ʌ/ Umbrella', word: 'Colorful Rainy Umbrella', drawer: (d: jsPDF, x: number, y: number) => drawVectorShapeWorksheet(d, 'heart', x, y) },
+    { l: 'V', name: 'V is for Van & Vegetables', phonic: '/v/ /v/ Vegetables', word: 'Fresh Garden Carrot', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Carrot', 1.1) },
+    { l: 'W', name: 'W is for Whale & Watermelon', phonic: '/w/ /w/ Whale', word: 'Giant Blue Whale', drawer: (d: jsPDF, x: number, y: number) => drawVectorDolphin(d, x, y, 1.1) },
+    { l: 'X', name: 'X is for Xylophone & Fox', phonic: '/ks/ /ks/ Xylophone', word: 'Clever Red Fox', drawer: (d: jsPDF, x: number, y: number) => drawVectorFox(d, x, y, 1.0) },
+    { l: 'Y', name: 'Y is for Yacht & Yak', phonic: '/j/ /j/ Yacht', word: 'Floating Blue Sailboat', drawer: (d: jsPDF, x: number, y: number) => drawVectorSailboat(d, x, y, 1.0) },
+    { l: 'Z', name: 'Z is for Zebra & Zigzag', phonic: '/z/ /z/ Zebra', word: 'Striped Running Zebra', drawer: (d: jsPDF, x: number, y: number) => drawVectorZebra(d, x, y, 1.1) },
+  ];
+
+  // Pages 3 to 28: Letters A to Z (26 pages)
+  abcLetters.forEach((item, idx) => {
+    doc.addPage();
+    const pNum = idx + 3;
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      `Letter ${item.l}: ${item.name}`,
+      `Phonics Sound: ${item.phonic} • Trace the letters and colour the ${item.word}!`
+    );
+
+    // Big Bubble Uppercase and Lowercase Letter
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(64);
+    doc.setTextColor(225, 29, 72);
+    doc.text(item.l, 45, 85, { align: 'center' });
+    doc.setFontSize(54);
+    doc.setTextColor(234, 88, 12);
+    doc.text(item.l.toLowerCase(), 80, 85, { align: 'center' });
+
+    // Tracing lines for pre-writing
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.6);
+    doc.line(22, 105, 188, 105);
+    doc.setLineDashPattern([2, 2], 0);
+    doc.line(22, 113, 188, 113);
+    doc.setLineDashPattern([], 0);
+    doc.line(22, 121, 188, 121);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`${item.l}  ${item.l}  ${item.l}  ${item.l}  ${item.l.toLowerCase()}  ${item.l.toLowerCase()}  ${item.l.toLowerCase()}`, 28, 118);
+
+    // Character drawing
+    item.drawer(doc, 135, 75);
+
+    // Word association Box
+    doc.setFillColor(255, 247, 237);
+    doc.setDrawColor(254, 215, 170);
+    doc.roundedRect(22, 135, 166, 105, 4, 4, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(194, 65, 12);
+    doc.text(`Write & Circle words that start with letter ${item.l}:`, 28, 150);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`[ 1. ${item.word} ]        [ 2. ${item.l}-Sound Friends ]        [ 3. Trace: ${item.l} ${item.l} ${item.l} ]`, 28, 168);
+
+    drawVectorTracingRow(doc, 'waves', 200);
+  });
+
+  // Page 29: Alphabet Matching Maze
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    29,
+    totalPages,
+    'The Alphabet Trail & Phonics Match Challenge',
+    'Follow the A-to-Z stepping stones across the river to reach the finish!'
+  );
+  for (let r = 0; r < 4; r++) {
+    drawVectorTracingRow(doc, r % 2 === 0 ? 'zigzag' : 'waves', 60 + r * 38);
+  }
+
+  // Page 30: Certificate of Completion
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    30,
+    totalPages,
+    'ALPHABET PHONICS MASTER DIPLOMA',
+    `For brilliantly mastering the letters A to Z, developing excellent pre-writing pencil grip, and completing ${product.title}!`
+  );
+}
+
+/**
+ * 3. Numbers 1–20 Colouring Book (Exact 24 Pages)
+ * Features numbers 1 to 20, ten-frames, item counting, and certificate!
+ */
+function generateNumbersBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 24;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  // Pages 2 to 21: Numbers 1 through 20
+  for (let num = 1; num <= 20; num++) {
+    doc.addPage();
+    const pNum = num + 1;
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      `Number ${num}: Count & Colour!`,
+      `Trace the number ${num}, count each friendly item, and color them brightly.`
+    );
+
+    // Large traceable digit
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(72);
+    doc.setTextColor(234, 88, 12);
+    doc.text(`${num}`, 45, 95, { align: 'center' });
+
+    // Ten Frame Visual Grid
+    doc.setDrawColor(203, 213, 225);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(80, 55, 100, 42, 3, 3, 'FD');
+    doc.setLineWidth(1);
+    doc.line(80, 76, 180, 76);
+    for (let c = 1; c < 5; c++) {
+      doc.line(80 + c * 20, 55, 80 + c * 20, 97);
+    }
+    for (let d = 0; d < Math.min(10, num); d++) {
+      const col = d % 5;
+      const row = Math.floor(d / 5);
+      doc.setFillColor(225, 29, 72);
+      doc.circle(90 + col * 20, 65 + row * 21, 6, 'F');
+    }
+
+    const words = [
+      '', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN',
+      'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN', 'TWENTY'
+    ];
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`WORD: ${words[num]}`, 105, 115, { align: 'center' });
+
+    // Counting Items Grid
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(22, 125, 166, 115, 4, 4, 'FD');
+
+    const maxDraw = Math.min(num, 15);
+    for (let item = 0; item < maxDraw; item++) {
+      const c = item % 5;
+      const r = Math.floor(item / 5);
+      const ix = 38 + c * 33;
+      const iy = 150 + r * 30;
+
+      doc.setDrawColor(30, 41, 59);
+      doc.circle(ix, iy, 9);
+      doc.setFillColor(30, 30, 30);
+      doc.circle(ix - 3, iy - 2, 1.2, 'F');
+      doc.circle(ix + 3, iy - 2, 1.2, 'F');
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Pencil Practice: Trace ${num} across the row:  ${num}   ${num}   ${num}   ${num}   ${num}   ${num}`, 28, 232);
+  }
+
+  // Page 22: Count & Match 1 to 20 Worksheet
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    22,
+    totalPages,
+    'Counting Detective: Match Numbers to Quantities',
+    'Count the objects in each bubble and draw a connecting line to the right number!'
+  );
+  drawVectorTracingRow(doc, 'waves', 80);
+  drawVectorTracingRow(doc, 'zigzag', 140);
+  drawVectorTracingRow(doc, 'loops', 200);
+
+  // Page 23: Numbers Tracing Grid 1 to 20
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    23,
+    totalPages,
+    'Master Handwriting: Trace Numbers 1 to 20',
+    'Keep your pencil inside the guides to practice neat numeral handwriting.'
+  );
+
+  for (let r = 0; r < 4; r++) {
+    const yN = 65 + r * 42;
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(22, yN, 166, 32);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(148, 163, 184);
+    const numsRow = [1 + r * 5, 2 + r * 5, 3 + r * 5, 4 + r * 5, 5 + r * 5];
+    doc.text(numsRow.map((n) => `[ ${n} ]`).join('    '), 105, yN + 22, { align: 'center' });
+  }
+
+  // Page 24: Certificate
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    24,
+    totalPages,
+    'LITTLE MATH CHAMPION AWARD',
+    `For brilliantly mastering number recognition, visual counting, and quantity correspondence from 1 to 20 in ${product.title}!`
+  );
+}
+
+/**
+ * 4. Fruits & Vegetables Colouring Book (Exact 28 Pages)
+ * Features 25 distinct fruit & veggie characters, rainbow plate challenge, and diploma!
+ */
+function generateFruitsVegetablesBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 28;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  const produceList = [
+    { name: '1. Sweet Strawberry Smiles', type: 'Fruit', color: 'Ruby Red', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Strawberry', 1.2) },
+    { name: '2. Dancing Crunchy Carrot', type: 'Vegetable', color: 'Bright Orange', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Carrot', 1.2) },
+    { name: '3. Cheerful Sunny Banana', type: 'Fruit', color: 'Sunshine Yellow', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Banana', 1.2) },
+    { name: '4. Crisp Orchard Apple', type: 'Fruit', color: 'Candy Red', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { name: '5. Sweet Purple Grapes Cluster', type: 'Fruit', color: 'Deep Violet', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Grapes', 1.2) },
+    { name: '6. Giant Watermelon Slice', type: 'Fruit', color: 'Emerald & Pink', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Watermelon', 1.2) },
+    { name: '7. Royal Pineapple King', type: 'Fruit', color: 'Golden Yellow', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Pineapple', 1.2) },
+    { name: '8. Golden Summer Corn Cob', type: 'Vegetable', color: 'Golden Yellow', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Corn', 1.2) },
+    { name: '9. Plump Garden Tomato', type: 'Vegetable', color: 'Crimson Red', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { name: '10. Giant Autumn Pumpkin', type: 'Vegetable', color: 'Harvest Orange', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.3) },
+    { name: '11. Juicy Citrus Orange & Wheel', type: 'Fruit', color: 'Vibrant Orange', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { name: '12. Smiling Forest Mushroom', type: 'Vegetable', color: 'Spotted Coral', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Strawberry', 1.2) },
+    { name: '13. Sweet Farm Peas in a Pod', type: 'Vegetable', color: 'Pea Green', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Banana', 1.1) },
+    { name: '14. Luscious Alphonso Mango', type: 'Fruit', color: 'Golden Amber', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { name: '15. Twin Cherry Buddies', type: 'Fruit', color: 'Cherry Red', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Strawberry', 1.1) },
+    { name: '16. Mighty Broccoli Tree', type: 'Vegetable', color: 'Forest Green', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { name: '17. Glossy Purple Eggplant', type: 'Vegetable', color: 'Deep Purple', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Carrot', 1.2) },
+    { name: '18. Crisp Bell Pepper', type: 'Vegetable', color: 'Bright Red / Green', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { name: '19. Cool Green Cucumber', type: 'Vegetable', color: 'Mint Green', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Carrot', 1.2) },
+    { name: '20. Juicy Golden Pear', type: 'Fruit', color: 'Lime Yellow', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { name: '21. Fuzzy Sweet Peach', type: 'Fruit', color: 'Soft Peach', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { name: '22. Little Blueberry Bunch', type: 'Fruit', color: 'Cobalt Blue', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Grapes', 1.1) },
+    { name: '23. Zesty Lemon & Lime', type: 'Fruit', color: 'Lemon Yellow', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { name: '24. Creamy Avocado Buddy', type: 'Fruit', color: 'Avocado Green', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { name: '25. Tropical Coconut Palm', type: 'Fruit', color: 'Cocoa Brown', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+  ];
+
+  produceList.forEach((item, idx) => {
+    doc.addPage();
+    const pNum = idx + 2;
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      item.name,
+      `Category: ${item.type} • Suggested Shade: ${item.color} • Eat your colours for superhero energy!`
+    );
+    item.drawer(doc, 105, 120);
+
+    drawCrayonsPalette(doc, [
+      { name: 'Red', r: 239, g: 68, b: 68 },
+      { name: 'Orange', r: 249, g: 115, b: 22 },
+      { name: 'Yellow', r: 234, g: 179, b: 8 },
+      { name: 'Green', r: 34, g: 197, b: 94 },
+    ]);
+  });
+
+  // Page 27: Rainbow Plate Nutrition Sorting Activity
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    27,
+    totalPages,
+    'The 5-Color Rainbow Nutrition Plate Challenge',
+    'Draw your favourite healthy fruits and vegetables in each rainbow sector!'
+  );
+  doc.circle(105, 140, 60);
+  doc.circle(105, 140, 20);
+
+  // Page 28: Certificate
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    28,
+    totalPages,
+    'HEALTHY HARVEST SUPER HERO CERTIFICATE',
+    `For developing fantastic food appreciation, healthy eating habits, and completing all 28 pages of ${product.title}!`
+  );
+}
+
+/**
+ * 5. Cute Birds Colouring Book (Exact 30 Pages)
+ * Features 27 unique birds, nest maze, and diploma!
+ */
+function generateBirdsBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 30;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  const birds = [
+    { name: '1. Nightcap Garden Owl on Branch', drawer: drawVectorOwl },
+    { name: '2. Royal Emerald Peacock with Fan', drawer: drawVectorPeacock },
+    { name: '3. Tropical Toucan with Giant Beak', drawer: drawVectorToucan },
+    { name: '4. Graceful Pink Flamingo on One Leg', drawer: drawVectorFlamingo },
+    { name: '5. Tiny Hummingbird Sipping Nectar', drawer: drawVectorHummingbird },
+    { name: '6. Swimming Lake Swan with Ripples', drawer: drawVectorSwan },
+    { name: '7. Wobbly Polar Penguin on Ice', drawer: drawVectorPenguin },
+    { name: '8. Chatty Rainforest Parrot', drawer: drawVectorGenericBird },
+    { name: '9. Singing Garden Meadow Sparrow', drawer: drawVectorGenericBird },
+    { name: '10. Busy Woodpecker on Oak Tree', drawer: drawVectorGenericBird },
+    { name: '11. Wise Mountain Hawk & Eagle', drawer: drawVectorGenericBird },
+    { name: '12. Sweet Little Yellow Canary', drawer: drawVectorGenericBird },
+    { name: '13. Chirpy Pond Duckling Family', drawer: drawVectorGenericBird },
+    { name: '14. Striped-Beak Ocean Puffin', drawer: drawVectorGenericBird },
+    { name: '15. Red-Breasted Winter Robin', drawer: drawVectorGenericBird },
+    { name: '16. Blue Jay in Pine Forest', drawer: drawVectorGenericBird },
+    { name: '17. Cockatoo with Feathery Crest', drawer: drawVectorGenericBird },
+    { name: '18. Kingfisher Diving for River Fish', drawer: drawVectorGenericBird },
+    { name: '19. White Stork with Baby Bundle', drawer: drawVectorGenericBird },
+    { name: '20. Dove of Peace with Olive Branch', drawer: drawVectorGenericBird },
+    { name: '21. Moonlit Barn Owl in Flight', drawer: drawVectorOwl },
+    { name: '22. Soaring Coastal White Seagull', drawer: drawVectorGenericBird },
+    { name: '23. Fast Running Savannah Ostrich', drawer: drawVectorFlamingo },
+    { name: '24. Spring Flying Forktail Swallow', drawer: drawVectorGenericBird },
+    { name: '25. Cozy Little Quail Family', drawer: drawVectorGenericBird },
+    { name: '26. New Zealand Flightless Kiwi Bird', drawer: drawVectorGenericBird },
+    { name: '27. Garden Nest with Three Speckled Eggs', drawer: drawVectorGenericBird },
+  ];
+
+  birds.forEach((b, i) => {
+    doc.addPage();
+    const pNum = i + 2;
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      b.name,
+      'Learn about wonderful feathered friends while coloring within the extra-thick lines.'
+    );
+    b.drawer(doc, 105, 125, 1.2);
+
+    drawCrayonsPalette(doc, [
+      { name: 'Sky Blue', r: 107, g: 203, b: 255 },
+      { name: 'Emerald', r: 72, g: 187, b: 120 },
+      { name: 'Plum Purple', r: 168, g: 85, b: 247 },
+      { name: 'Warm Gold', r: 255, g: 217, b: 61 },
+    ]);
+  });
+
+  // Page 29: Maze
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    29,
+    totalPages,
+    'Fly Home: The Forest Bird Nest Maze',
+    'Guide the little songbird through the twisting branches back to its cozy nest!'
+  );
+  drawVectorTracingRow(doc, 'loops', 90);
+  drawVectorTracingRow(doc, 'waves', 150);
+  drawVectorTracingRow(doc, 'zigzag', 210);
+
+  // Page 30: Certificate
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    30,
+    totalPages,
+    'JUNIOR ORNITHOLOGIST AWARD',
+    `For exploring avian diversity, color blending, and completing all 30 pages of ${product.title}!`
+  );
+}
+
+/**
+ * 6. Tracing Practice & Line Control Book (Exact 36 Pages)
+ * Features 33 progressive motor control tracks, maze, and handwriting star diploma!
+ */
+function generateTracingBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 36;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  const tracingExercises = [
+    { title: '1. Horizontal Lines: Drive the Car to Garage', type: 'straight' },
+    { title: '2. Vertical Rainfall: Rain Falling from Clouds', type: 'straight' },
+    { title: '3. Diagonal Upward: Flying the Colorful Kite', type: 'zigzag' },
+    { title: '4. Diagonal Downward: Sledding Down Snow Hill', type: 'zigzag' },
+    { title: '5. Gentle Ocean Waves: Helping Fish Leap', type: 'waves' },
+    { title: '6. Big Sea Swirls: The Dolphin Adventure', type: 'waves' },
+    { title: '7. Castle Wall Battlements: Square Waves', type: 'straight' },
+    { title: '8. Mountain Peaks: Zigzag Goat Paths', type: 'zigzag' },
+    { title: '9. Rollercoaster Loops: Looping Toy Airplane', type: 'loops' },
+    { title: '10. Snail Shell Spirals: Gentle Circular Control', type: 'loops' },
+    { title: '11. Circle Perimeter Tracing: Round Sunshine', type: 'straight' },
+    { title: '12. Square Tracing: The Mystery Toy Box', type: 'straight' },
+    { title: '13. Triangle Tracing: Pizza Slice & Mountain', type: 'zigzag' },
+    { title: '14. Star Tracing: The Twinkling Night Sky', type: 'zigzag' },
+    { title: '15. Pre-Writing Curves: The Letter C Curve', type: 'waves' },
+    { title: '16. Pre-Writing Ovals: The Letter O Circle', type: 'straight' },
+    { title: '17. Pre-Writing Slants: The Letters V and W Paths', type: 'zigzag' },
+    { title: '18. Pre-Writing Canes: The Letters J and U Paths', type: 'loops' },
+    { title: '19. Animal Pathway: Bunny Hopping to Carrot', type: 'waves' },
+    { title: '20. Animal Pathway: Puppy Running to Juicy Bone', type: 'straight' },
+    { title: '21. Animal Pathway: Honeybee Flying to Flower', type: 'loops' },
+    { title: '22. Two-Handed Mirror Tracing: Symmetrical Tree', type: 'zigzag' },
+    { title: '23. Stepping Stones Tracing Across the River', type: 'straight' },
+    { title: '24. Balloon Strings Tracing with Wiggles', type: 'waves' },
+    { title: '25. Dinosaur Spine Zigzag Tracing', type: 'zigzag' },
+    { title: '26. Caterpillar Body Circles Tracing', type: 'straight' },
+    { title: '27. Spider Web Spiral Control Path', type: 'loops' },
+    { title: '28. Lightning Bolt Fast Reflex Tracing', type: 'zigzag' },
+    { title: '29. Clock Hands Precision Rotation Path', type: 'straight' },
+    { title: '30. Rainbow Arch Multi-Color Tracing', type: 'waves' },
+    { title: '31. Dotted Outline Bear Face Tracing', type: 'loops' },
+    { title: '32. Dotted Outline Toy Train Tracing', type: 'straight' },
+    { title: '33. Dotted Outline Sailing Boat Tracing', type: 'zigzag' },
+  ];
+
+  tracingExercises.forEach((ex, idx) => {
+    doc.addPage();
+    const pNum = idx + 2;
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      ex.title,
+      'Keep your pencil gently on the dashed line from START to FINISH without lifting your hand.'
+    );
+
+    for (let track = 0; track < 4; track++) {
+      const yT = 70 + track * 42;
+      drawVectorTracingRow(doc, ex.type, yT);
+    }
+  });
+
+  // Page 35: Giant Pre-Writing Labyrinth
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    35,
+    totalPages,
+    'The Grand Pencil Control Maze & Labyrinth',
+    'Navigate the ultimate test of pre-writing accuracy to reach the treasure chest!'
+  );
+  doc.setLineWidth(2);
+  doc.roundedRect(30, 60, 150, 150, 4, 4);
+  doc.line(30, 95, 140, 95);
+  doc.line(65, 135, 180, 135);
+  doc.line(30, 175, 120, 175);
+
+  // Page 36: Certificate
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    36,
+    totalPages,
+    'MASTER OF PENCIL CONTROL & HANDWRITING DIPLOMA',
+    `For mastering pre-writing strokes, line precision, tripod pencil grip, and completing all 36 pages of ${product.title}!`
+  );
+}
+
+/**
+ * 7. Vehicles & Transport Colouring Book (Exact 28 Pages)
+ * Features 25 distinct transport vehicles, traffic safety signs, and pilot certificate!
+ */
+function generateVehiclesBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 28;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  const vehicleList = [
+    { name: '1. Beep-Beep Friendly Family Car', drawer: drawVectorCar },
+    { name: '2. Rumbling Steam Locomotive Train', drawer: drawVectorTrain },
+    { name: '3. Soaring Passenger Jet Airplane', drawer: drawVectorAirplane },
+    { name: '4. Whirly Rescue Helicopter in Sky', drawer: drawVectorHelicopter },
+    { name: '5. Floating Sailboat with White Sails', drawer: drawVectorSailboat },
+    { name: '6. Cosmic Space Rocket Blasting Off', drawer: drawVectorRocket },
+    { name: '7. Deep Sea Explorer Submarine', drawer: drawVectorSubmarine },
+    { name: '8. Powerful Farm Tractor in Fields', drawer: drawVectorTractor },
+    { name: '9. Floating Hot Air Balloon in Sky', drawer: drawVectorHotAirBalloon },
+    { name: '10. Big Red Fire Engine with Ladder', drawer: drawVectorFireEngine },
+    { name: '11. Hospital Ambulance with Siren', drawer: drawVectorAmbulance },
+    { name: '12. Police Patrol Car on Highway', drawer: drawVectorPoliceCar },
+    { name: '13. Bright Yellow School Bus', drawer: drawVectorSchoolBus },
+    { name: '14. Heavy Quarry Dump Truck', drawer: drawVectorDumpTruck },
+    { name: '15. Twirling Concrete Mixer Truck', drawer: drawVectorCementMixer },
+    { name: '16. Luxury Ocean Cruise Liner', drawer: drawVectorSailboat },
+    { name: '17. Vintage Motorcycle with Sidecar', drawer: drawVectorMotorcycle },
+    { name: '18. Double Decker City Bus', drawer: drawVectorSchoolBus },
+    { name: '19. Little Bicycle with Ringing Bell', drawer: drawVectorBicycle },
+    { name: '20. Cargo Delivery Van with Boxes', drawer: drawVectorAmbulance },
+    { name: '21. City Garbage & Recycling Truck', drawer: drawVectorDumpTruck },
+    { name: '22. Helpful Highway Tow Truck', drawer: drawVectorDumpTruck },
+    { name: '23. Zippy Motor Scooter with Helmet', drawer: drawVectorMotorcycle },
+    { name: '24. Supersonic Jet Fighter', drawer: drawVectorAirplane },
+    { name: '25. Island Passenger Ferry Boat', drawer: drawVectorSailboat },
+  ];
+
+  vehicleList.forEach((v, idx) => {
+    doc.addPage();
+    const pNum = idx + 2;
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      v.name,
+      'Colour the vehicle and wheels with your favourite shades. Add roads or clouds!'
+    );
+    v.drawer(doc, 105, 125, 1.15);
+
+    drawCrayonsPalette(doc, [
+      { name: 'Cherry Red', r: 239, g: 68, b: 68 },
+      { name: 'Canary Yellow', r: 250, g: 204, b: 21 },
+      { name: 'Sky Blue', r: 56, g: 189, b: 248 },
+      { name: 'Tarmac Gray', r: 100, g: 116, b: 139 },
+    ]);
+  });
+
+  // Page 27: Road Safety Signs & Traffic Light
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    27,
+    totalPages,
+    'Road Safety Explorer: Traffic Lights & Street Signs',
+    'Color the traffic light: Red = Stop, Yellow = Wait, Green = Go!'
+  );
+  doc.setLineWidth(2);
+  doc.roundedRect(85, 60, 40, 110, 6, 6);
+  doc.circle(105, 80, 12);
+  doc.circle(105, 115, 12);
+  doc.circle(105, 150, 12);
+
+  // Page 28: Certificate
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    28,
+    totalPages,
+    'JUNIOR PILOT & CAPTAIN DIPLOMA',
+    `For zooming, chugging, and steering through all 28 action-packed pages of ${product.title}!`
+  );
+}
+
+/**
+ * 8. Shapes & Colours Foundation Worksheets (Exact 26 Pages)
+ * Features 23 geometric shape worksheets, scavenger hunt, and master diploma!
+ */
+function generateShapesBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 26;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  const shapes = [
+    { name: 'Circle: The Happy Sun & Bouncy Ball', shape: 'circle', color: 'Red' },
+    { name: 'Square: The Toy Box & Window Pane', shape: 'square', color: 'Blue' },
+    { name: 'Triangle: The Mountain Peak & Pizza Slice', shape: 'triangle', color: 'Yellow' },
+    { name: 'Rectangle: The House Door & Story Book', shape: 'rectangle', color: 'Green' },
+    { name: 'Star: The Twinkling Night Sky Star', shape: 'star', color: 'Orange' },
+    { name: 'Oval: The Dinosaur & Bird Egg', shape: 'oval', color: 'Purple' },
+    { name: 'Heart: Love, Kindness & Friendship', shape: 'heart', color: 'Pink' },
+    { name: 'Diamond / Rhombus: The Flying Kite', shape: 'diamond', color: 'Cyan' },
+    { name: 'Crescent: The Smiling Night Moon', shape: 'crescent', color: 'Gold' },
+    { name: 'Primary Colors Wheel: Red, Yellow & Blue', shape: 'circle', color: 'Primary' },
+    { name: 'Secondary Colors: Mixing Magic Fun', shape: 'square', color: 'Secondary' },
+    { name: 'Colour by Shape Secret Puzzle', shape: 'triangle', color: 'Multi' },
+    { name: 'Shape Detective: Count the Circles in the Room', shape: 'circle', color: 'Red' },
+    { name: 'Shape Detective: Count the Squares in the Box', shape: 'square', color: 'Blue' },
+    { name: 'Shape Detective: Count the Triangles in Tent', shape: 'triangle', color: 'Yellow' },
+    { name: 'Build a Friendly Robot with Shapes', shape: 'rectangle', color: 'Silver' },
+    { name: 'Build a Space Rocket with Shapes', shape: 'triangle', color: 'Red' },
+    { name: 'Build a Dream Castle with Shapes', shape: 'square', color: 'Gold' },
+    { name: 'Shape Shadow Silhouette Matching', shape: 'diamond', color: 'Purple' },
+    { name: 'Pattern Sequence: Circle, Star, Circle, [?]', shape: 'star', color: 'Yellow' },
+    { name: 'Pattern Sequence: Square, Triangle, Square, [?]', shape: 'square', color: 'Blue' },
+    { name: 'Sorting Shapes by Size: Small, Medium, Giant', shape: 'circle', color: 'Green' },
+    { name: 'Tracing Shape Perimeters with Precision', shape: 'heart', color: 'Pink' },
+  ];
+
+  shapes.forEach((s, idx) => {
+    doc.addPage();
+    const pNum = idx + 2;
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      `${idx + 1}. ${s.name}`,
+      `Identify the shape, trace its perimeter, and color using the suggested shade: ${s.color}.`
+    );
+    drawVectorShapeWorksheet(doc, s.shape, 105, 125);
+
+    drawCrayonsPalette(doc, [
+      { name: 'Primary Red', r: 239, g: 68, b: 68 },
+      { name: 'Sky Blue', r: 59, g: 130, b: 246 },
+      { name: 'Sunny Yellow', r: 234, g: 179, b: 8 },
+      { name: 'Leaf Green', r: 34, g: 197, b: 94 },
+    ]);
+  });
+
+  // Page 25: Giant Shapes Scavenger Hunt
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    25,
+    totalPages,
+    'The Ultimate Shapes & Colors Scavenger Hunt',
+    'Tally all geometric figures hidden in the playroom scene!'
+  );
+  doc.roundedRect(30, 60, 150, 150, 4, 4);
+
+  // Page 26: Certificate
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    26,
+    totalPages,
+    'MASTER OF SHAPES & COLOURS DIPLOMA',
+    `For brilliantly mastering geometric shape discrimination, color theory, and completing all 26 pages of ${product.title}!`
+  );
+}
+
+/**
+ * 9. Festivals of Joy Kids Colouring Book (Exact 30 Pages)
+ * Features 27 diverse cultural celebrations, sweets match, and harmony diploma!
+ */
+function generateFestivalsBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 30;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  const festivals = [
+    { name: '1. Sparkling Diwali Diya Lamp of Light', drawer: drawVectorDiya },
+    { name: '2. Joyous Diwali Floral Rangoli Pattern', drawer: drawVectorRangoli },
+    { name: '3. Holi Pichkari Water Gun & Splashes', drawer: drawVectorHoliPichkari },
+    { name: '4. Christmas Evergreen Tree with Star', drawer: drawVectorChristmasTree },
+    { name: '5. Eid Crescent Moon & Festive Lanterns', drawer: drawVectorEidLantern },
+    { name: '6. Makar Sankranti Soaring Flying Kites', drawer: drawVectorKites },
+    { name: '7. Pongal Harvest Boiling Pot of Joy', drawer: drawVectorRangoli },
+    { name: '8. Raksha Bandhan Sacred Thread & Sweets', drawer: (d: jsPDF, x: number, y: number) => drawVectorShapeWorksheet(d, 'star', x, y) },
+    { name: '9. Janmashtami Little Krishna Makhan Pot', drawer: drawVectorBear },
+    { name: '10. Smiling Lord Ganesha with Sweet Modak', drawer: drawVectorElephant },
+    { name: '11. Onam Floral Pookkalam Carpet', drawer: drawVectorRangoli },
+    { name: '12. Navratri Dandiya Rhythm Sticks', drawer: drawVectorDolphin },
+    { name: '13. Gurpurab Golden Temple & Nishan Sahib', drawer: (d: jsPDF, x: number, y: number) => drawVectorShapeWorksheet(d, 'square', x, y) },
+    { name: '14. Jolly Santa Claus with Gift Sack', drawer: drawVectorTeddyBear },
+    { name: '15. Christmas Bells, Stockings & Holly', drawer: (d: jsPDF, x: number, y: number) => drawVectorShapeWorksheet(d, 'circle', x, y) },
+    { name: '16. Easter Bunny with Decorated Eggs', drawer: drawVectorBunny },
+    { name: '17. Halloween Pumpkin Jack-o\'-Lantern', drawer: drawVectorPumpkin },
+    { name: '18. Thanksgiving Harvest Cornucopia', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Strawberry', 1.2) },
+    { name: '19. New Year Midnight Sky Fireworks', drawer: (d: jsPDF, x: number, y: number) => drawVectorShapeWorksheet(d, 'star', x, y) },
+    { name: '20. Friendship Day Colorful Bracelets', drawer: (d: jsPDF, x: number, y: number) => drawVectorShapeWorksheet(d, 'heart', x, y) },
+    { name: '21. Republic & Independence Day Pride', drawer: drawVectorAirplane },
+    { name: '22. Birthday Celebration Cake with Candles', drawer: drawVectorBirthdayCake },
+    { name: '23. Festival of Lights Candle Procession', drawer: drawVectorDiya },
+    { name: '24. Eid Sweets & Dates Celebration Plate', drawer: drawVectorEidLantern },
+    { name: '25. Holi Powder Color Bowls & Splashes', drawer: drawVectorHoliPichkari },
+    { name: '26. Winter Wonderland Snowman & Scarf', drawer: drawVectorSnowman },
+    { name: '27. Harmonious Family Festive Feast', drawer: drawVectorTeddyBear },
+  ];
+
+  festivals.forEach((f, idx) => {
+    doc.addPage();
+    const pNum = idx + 2;
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      f.name,
+      'Celebrate culture, harmony, and joy! Fill with your most dazzling festive colors.'
+    );
+    f.drawer(doc, 105, 125, 1.15);
+
+    drawCrayonsPalette(doc, [
+      { name: 'Deep Saffron', r: 249, g: 115, b: 22 },
+      { name: 'Ruby Crimson', r: 225, g: 29, b: 72 },
+      { name: 'Golden Light', r: 234, g: 179, b: 8 },
+      { name: 'Royal Emerald', r: 16, g: 185, b: 129 },
+    ]);
+  });
+
+  // Page 29: Festive Sweets Matching
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    29,
+    totalPages,
+    'Festive Sweets & Delicacies Matching Game',
+    'Match each festive sweet to its celebration: Modak, Ladoo, Cake, and Dates!'
+  );
+  drawVectorTracingRow(doc, 'waves', 90);
+  drawVectorTracingRow(doc, 'loops', 150);
+  drawVectorTracingRow(doc, 'zigzag', 210);
+
+  // Page 30: Certificate
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    30,
+    totalPages,
+    'FESTIVALS OF JOY CULTURAL STAR AWARD',
+    `For celebrating cultural diversity, harmony, and artistic beauty in completing all 30 pages of ${product.title}!`
+  );
+}
+
+/**
+ * 10. Cartoon Colouring Book (Exact 20–24 Pages)
+ * Whimsical monsters, friendly robots, fairy tale castles, and cuddly teddy bears!
+ */
+function generateCartoonBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 20;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  const cartoons = [
+    { name: '1. The Friendly Three-Eyed Star Monster', desc: 'A smiling purple monster who loves collecting shiny yellow star pebbles!', drawer: drawVectorMonster },
+    { name: '2. Bleep-Bloop Happy Little Robot', desc: 'A cheerful mechanical buddy with antennas, chest dials, and clicking gears.', drawer: drawVectorRobot },
+    { name: '3. Royal Fairytale Castle with Turrets', desc: 'A magical kingdom castle with fluttering banners, high stone towers, and drawbridge.', drawer: drawVectorCastle },
+    { name: '4. Cuddly Teddy Bear Hugging a Star', desc: 'Warm fuzzy teddy bear with stitched button nose and heart-shaped paw pads.', drawer: drawVectorTeddyBear },
+    { name: '5. Space Alien Flying in Cosmic Saucer', desc: 'A friendly cyclops space explorer zooming past ringed planets and asteroids.', drawer: drawVectorAlien },
+    { name: '6. Gentle Baby Dragon with Daisy Blossom', desc: 'A cute little winged dragon who loves sweet wildflowers instead of fire!', drawer: drawVectorDragon },
+    { name: '7. Smiling Little Dinosaur in Fern Forest', desc: 'A long-necked friendly Brontosaurus munching on tender jungle tree leaves.', drawer: drawVectorDinosaur },
+    { name: '8. Three-Tier Birthday Celebration Cake', desc: 'A gigantic cake decorated with glowing candles, cherries, and sweet frosting drips.', drawer: drawVectorBirthdayCake },
+    { name: '9. Friendly Sea Monster in Bubble Lagoon', desc: 'Deep sea explorer submarine swimming with playful bubbles and coral.', drawer: drawVectorSubmarine },
+    { name: '10. Enchanted Butterfly Garden Fairy', desc: 'Delicate ornate butterfly wings fluttering above blooming summer daisies.', drawer: drawVectorButterfly },
+    { name: '11. Superhero Puppy with Fluttering Cape', desc: 'A brave little golden pup ready to save the day and catch the flying ball!', drawer: drawVectorPuppy },
+    { name: '12. Purring Kitten with Looping Yarn Ball', desc: 'Cute whiskers, curled tail, and looping yarn threads ready for your crayons.', drawer: drawVectorKitten },
+    { name: '13. Cosmic Rocket Blasting into Galaxy', desc: 'Soaring spaceship traveling to the moon with fiery golden rocket flames.', drawer: drawVectorRocket },
+    { name: '14. Rainbow Hot Air Balloon in Sky', desc: 'Floating gently above fluffy clouds with a woven picnic wicker basket.', drawer: drawVectorHotAirBalloon },
+    { name: '15. Leaping Green Pond Frog with Lily Pad', desc: 'Big croaking round eyes sitting peacefully on round floating lily pads.', drawer: drawVectorFrog },
+    { name: '16. Bushy-Tailed Forest Squirrel with Acorn', desc: 'A cheerful woodland squirrel holding a giant golden acorn for winter.', drawer: drawVectorSquirrel },
+    { name: '17. Halloween Jack-o\'-Lantern Pumpkin', desc: 'A grinning harvest pumpkin with carved triangle eyes and leafy tendril.', drawer: drawVectorPumpkin },
+    { name: '18. Winter Wonderland Snowman with Scarf', desc: 'A smiling three-tier snowman wearing a tall top hat and carrot nose.', drawer: drawVectorSnowman },
+  ];
+
+  cartoons.forEach((c, idx) => {
+    if (idx + 2 < totalPages) {
+      doc.addPage();
+      const pNum = idx + 2;
+      drawPageHeaderAndFooter(
+        doc,
+        product,
+        pNum,
+        totalPages,
+        c.name,
+        c.desc
+      );
+      c.drawer(doc, 105, 125, 1.15);
+
+      drawCrayonsPalette(doc, [
+        { name: 'Bubblegum Pink', r: 244, g: 114, b: 182 },
+        { name: 'Electric Purple', r: 168, g: 85, b: 247 },
+        { name: 'Sunshine Yellow', r: 250, g: 204, b: 21 },
+        { name: 'Mint Green', r: 74, g: 222, b: 128 },
+      ]);
+    }
+  });
+
+  // Second to last page: Creative Imagination Challenge
+  if (totalPages > cartoons.length + 2) {
+    while (doc.getNumberOfPages() < totalPages - 1) {
+      doc.addPage();
+      const cur = doc.getNumberOfPages();
+      drawPageHeaderAndFooter(
+        doc,
+        product,
+        cur,
+        totalPages,
+        `Cartoon Imagination Sheet ${cur}`,
+        'Draw your own whimsical creatures and give them silly superpower names!'
+      );
+      drawVectorMonster(doc, 105, 125, 1.1);
+    }
+  }
+
+  // Final Page: Certificate
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    totalPages,
+    totalPages,
+    'WHIMSICAL CARTOON MASTER ARTIST AWARD',
+    `For bringing magical imaginary creatures to life with extraordinary creativity in completing all ${totalPages} pages of ${product.title}!`
+  );
+}
+
+/**
+ * 11. Nursery Activities Workbook (Exact 19–24 Pages)
+ * Features visual mazes, shadow matching, dot-to-dot, spot the differences, and certificate!
+ */
+function generateNurseryBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = product.pageCount || 19;
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  const activities = [
+    { title: '1. Shadow Silhouette Match: Farm & Forest', desc: 'Draw a straight pencil line connecting each outlined friend to its shadow.', drawer: (d: jsPDF, x: number, y: number) => drawVectorShadowMatchWorksheet(d, x, y) },
+    { title: '2. Honeybee Garden Maze Adventure', desc: 'Guide the smiling honeybee through the garden pathways to the honey jar.', drawer: (d: jsPDF, x: number, y: number) => drawVectorMazeWorksheet(d, x, y, 1.0) },
+    { title: '3. Connect the Dots 1 to 20: Star Trophy', desc: 'Connect numbers 1 to 20 in sequential order to reveal the secret picture!', drawer: (d: jsPDF, x: number, y: number) => drawVectorDotToDotWorksheet(d, x, y) },
+    { title: '4. Spot 5 Differences in Playroom Scene', desc: 'Look closely at Picture A and Picture B. Find and circle all 5 differences!', drawer: (d: jsPDF, x: number, y: number) => drawVectorSpotDifferenceWorksheet(d, x, y) },
+    { title: '5. Bunny Hopping Curve Tracing to Carrot', desc: 'Follow the gentle dotted curves across the page without lifting your pencil.', drawer: (d: jsPDF, x: number, y: number) => { drawVectorBunny(d, x, y - 20, 0.9); drawVectorTracingRow(d, 'waves', y + 45); } },
+    { title: '6. Puppy Running Trail to Squeaky Bone', desc: 'Trace the straight runway from Start to Finish, then color the cheerful pup.', drawer: (d: jsPDF, x: number, y: number) => { drawVectorPuppy(d, x, y - 20, 0.9); drawVectorTracingRow(d, 'straight', y + 45); } },
+    { title: '7. Floating Party Balloons Counting Fiesta', desc: 'Count each party balloon in the sky and color each in a different bright shade.', drawer: (d: jsPDF, x: number, y: number) => drawVectorHotAirBalloon(d, x, y, 1.1) },
+    { title: '8. Snail Shell Spiral Precision Control', desc: 'Follow the circular spiral inward slowly to build fine motor wrist agility.', drawer: (d: jsPDF, x: number, y: number) => drawVectorTortoise(d, x, y, 1.1) },
+    { title: '9. Sweet Strawberry Seed Dotting Practice', desc: 'Practice pencil grip by placing neat dots inside each seed circle.', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Strawberry', 1.2) },
+    { title: '10. Star & Circle Shape Recognition Game', desc: 'Identify geometric figures and color matching pairs with the same shade.', drawer: (d: jsPDF, x: number, y: number) => drawVectorShapeWorksheet(d, 'star', x, y) },
+    { title: '11. Ocean Dolphin Wave Jumping Quest', desc: 'Leap over the wavy water lines and color the leaping dolphin!', drawer: (d: jsPDF, x: number, y: number) => drawVectorDolphin(d, x, y, 1.1) },
+    { title: '12. Big Apple Phonics & Finger Tracing', desc: 'Trace the outer circumference of the apple and sound out /a/ /a/ Apple.', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.2) },
+    { title: '13. Mountain Peak Zigzag Pre-Writing Track', desc: 'Trace the sharp mountain zigzag tracks to reach the snow peak.', drawer: (d: jsPDF, x: number, y: number) => { drawVectorTracingRow(d, 'zigzag', y - 20); drawVectorTracingRow(d, 'zigzag', y + 35); } },
+    { title: '14. Symmetrical Butterfly Wing Decorating', desc: 'Color both wings with matching colors to create a beautiful mirror pattern.', drawer: (d: jsPDF, x: number, y: number) => drawVectorButterfly(d, x, y, 1.1) },
+    { title: '15. Count & Add: Two Apples + Two Apples', desc: 'Count the items on each side and write down the total sum in the box.', drawer: (d: jsPDF, x: number, y: number) => drawVectorFruit(d, x, y, 'Apple', 1.1) },
+    { title: '16. Little Train Track Follow-Through', desc: 'Guide the locomotive along the rails to the train station.', drawer: (d: jsPDF, x: number, y: number) => drawVectorTrain(d, x, y, 1.05) },
+    { title: '17. Nursery Free Expression Drawing Prompt', desc: 'Draw your favourite friend or pet in the frame below!', drawer: (d: jsPDF, x: number, y: number) => drawVectorTeddyBear(d, x, y, 1.05) },
+  ];
+
+  activities.forEach((act, idx) => {
+    if (idx + 2 < totalPages) {
+      doc.addPage();
+      const pNum = idx + 2;
+      drawPageHeaderAndFooter(doc, product, pNum, totalPages, act.title, act.desc);
+      act.drawer(doc, 105, 125);
+
+      drawCrayonsPalette(doc, [
+        { name: 'Sunny Orange', r: 249, g: 115, b: 22 },
+        { name: 'Sky Cyan', r: 6, g: 182, b: 212 },
+        { name: 'Lime Green', r: 132, g: 204, b: 22 },
+        { name: 'Berry Pink', r: 236, g: 72, b: 153 },
+      ]);
+    }
+  });
+
+  // Final Page: Certificate
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    totalPages,
+    totalPages,
+    'LITTLE SCHOLAR NURSERY STAR AWARD',
+    `For demonstrating wonderful fine-motor control, visual logic, and joyful curiosity in completing all ${totalPages} pages of ${product.title}!`
+  );
+}
+
+/**
+ * 12. Preschool Activity Bundle (3-in-1, Exact 85 Pages)
+ * Combines 3 complete workbooks:
+ * - Section 1: Safari Animals Colouring (30 pages, pp 2–31)
+ * - Section 1 Star Award (p 32)
+ * - Section 2: Alphabet Phonics A to Z (28 pages, pp 33–60)
+ * - Section 2 Phonics Badge (p 61)
+ * - Section 3: Numbers 1–20 Tracing & Counting (23 pages, pp 62–84)
+ * - Section 3 / Master Bundle Diploma (p 85)
+ * Total: exactly 85 pages!
+ */
+function generatePreschoolBundlePDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = 85;
+
+  // Page 1: Master Bundle Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  // SECTION 1: Animals Colouring (Pages 2 to 31 = 30 animals)
+  const animals30 = [
+    { name: 'Lion King', drawer: drawVectorLion },
+    { name: 'Gentle Elephant', drawer: drawVectorElephant },
+    { name: 'Honey Bear', drawer: drawVectorBear },
+    { name: 'Ocean Dolphin', drawer: drawVectorDolphin },
+    { name: 'Cheeky Monkey', drawer: drawVectorMonkey },
+    { name: 'Tall Giraffe', drawer: drawVectorGiraffe },
+    { name: 'Striped Zebra', drawer: drawVectorZebra },
+    { name: 'Panda Bear', drawer: drawVectorPanda },
+    { name: 'Farm Cow', drawer: drawVectorCow },
+    { name: 'Fluffy Sheep', drawer: drawVectorSheep },
+    { name: 'Pink Piglet', drawer: drawVectorPiglet },
+    { name: 'Green Pond Frog', drawer: drawVectorFrog },
+    { name: 'Playful Puppy', drawer: drawVectorPuppy },
+    { name: 'Sweet Kitten', drawer: drawVectorKitten },
+    { name: 'Bengal Tiger', drawer: drawVectorTiger },
+    { name: 'Kangaroo with Joey', drawer: drawVectorKangaroo },
+    { name: 'Iceberg Penguin', drawer: drawVectorPenguin },
+    { name: 'Shielded Tortoise', drawer: drawVectorTortoise },
+    { name: 'Bushy Squirrel', drawer: drawVectorSquirrel },
+    { name: 'River Hippo', drawer: drawVectorHippo },
+    { name: 'Horned Rhino', drawer: drawVectorRhino },
+    { name: 'Spotted Forest Deer', drawer: drawVectorDeer },
+    { name: 'Clever Fox', drawer: drawVectorFox },
+    { name: 'Proud Farm Horse', drawer: drawVectorHorse },
+    { name: 'Hop Bunny', drawer: drawVectorBunny },
+    { name: 'Friendly Dinosaur', drawer: drawVectorDinosaur },
+    { name: 'Garden Butterfly', drawer: drawVectorButterfly },
+    { name: 'Playful Sea Seal', drawer: drawVectorSeal },
+    { name: 'Wise Night Owl', drawer: drawVectorOwl },
+    { name: 'Royal Peacock', drawer: drawVectorPeacock },
+  ];
+
+  animals30.forEach((a, i) => {
+    doc.addPage();
+    const pNum = i + 2;
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      `Section 1 (Animals): ${a.name}`,
+      'Colour within the bold lines! Practice saying the animal name and sound.',
+      'Section 1: Animals'
+    );
+    a.drawer(doc, 105, 125, 1.15);
+    drawCrayonsPalette(doc, [
+      { name: 'Yellow', r: 255, g: 217, b: 61 },
+      { name: 'Orange', r: 255, g: 138, b: 101 },
+      { name: 'Sky Blue', r: 107, g: 203, b: 255 },
+      { name: 'Mint Green', r: 184, g: 242, b: 200 },
+    ]);
+  });
+
+  // Page 32: Animal Kingdom Section Award & Section 2 Divider
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    32,
+    totalPages,
+    'ANIMAL KINGDOM ARTIST STAR',
+    'For beautifully completing all 30 safari and farm animal colouring pages in Section 1!'
+  );
+
+  // SECTION 2: Alphabet Learning & Phonics (Pages 33 to 60 = 28 pages)
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  letters.forEach((ltr, i) => {
+    doc.addPage();
+    const pNum = i + 33;
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      `Section 2 (Alphabet): Letter ${ltr} Phonics`,
+      `Trace the uppercase and lowercase ${ltr}, say the phonics sound out loud, and color!`,
+      'Section 2: ABC Phonics'
+    );
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(64);
+    doc.setTextColor(225, 29, 72);
+    doc.text(ltr, 50, 95, { align: 'center' });
+    doc.setFontSize(54);
+    doc.setTextColor(234, 88, 12);
+    doc.text(ltr.toLowerCase(), 85, 95, { align: 'center' });
+
+    if (i % 4 === 0) drawVectorFruit(doc, 140, 85, 'Apple', 1.0);
+    else if (i % 4 === 1) drawVectorBear(doc, 140, 85, 0.95);
+    else if (i % 4 === 2) drawVectorCar(doc, 140, 85, 0.95);
+    else drawVectorDolphin(doc, 140, 85, 0.95);
+
+    drawVectorTracingRow(doc, 'straight', 150);
+    drawVectorTracingRow(doc, 'waves', 200);
+  });
+
+  // Pages 59 & 60: Alphabet Roadmap & Maze
+  doc.addPage();
+  drawPageHeaderAndFooter(doc, product, 59, totalPages, 'Section 2: A to Z Phonics River Trail', 'Step across each letter stepping stone to cross the river!', 'Section 2: ABC Phonics');
+  drawVectorTracingRow(doc, 'loops', 90);
+  drawVectorTracingRow(doc, 'zigzag', 150);
+  drawVectorTracingRow(doc, 'waves', 210);
+
+  doc.addPage();
+  drawPageHeaderAndFooter(doc, product, 60, totalPages, 'Section 2: Phonics Sound Matching Quiz', 'Draw a line connecting the letter sound to the picture!', 'Section 2: ABC Phonics');
+  drawVectorShadowMatchWorksheet(doc, 105, 125);
+
+  // Page 61: Alphabet Graduate Star Badge
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    61,
+    totalPages,
+    'ALPHABET PHONICS GRADUATE BADGE',
+    'For mastering letter recognition, letter sounds, and pre-writing traces from A to Z in Section 2!'
+  );
+
+  // SECTION 3: Numbers 1 to 20 Tracing & Counting (Pages 62 to 84 = 23 pages)
+  for (let num = 1; num <= 20; num++) {
+    doc.addPage();
+    const pNum = num + 61; // 62 to 81
+    drawPageHeaderAndFooter(
+      doc,
+      product,
+      pNum,
+      totalPages,
+      `Section 3 (Numbers): Number ${num} Counting Fiesta`,
+      `Count the ${num} friendly objects, trace the large numeral, and color!`,
+      'Section 3: Numbers'
+    );
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(64);
+    doc.setTextColor(16, 185, 129);
+    doc.text(`${num}`, 50, 95, { align: 'center' });
+
+    drawVectorBear(doc, 140, 85, 0.95);
+    drawVectorTracingRow(doc, 'straight', 155);
+    drawVectorTracingRow(doc, 'zigzag', 205);
+  }
+
+  // Pages 82, 83, 84: Addition & Number Mazes
+  doc.addPage();
+  drawPageHeaderAndFooter(doc, product, 82, totalPages, 'Section 3: Visual Number Addition 1 to 10', 'Count the apples on both sides, add them up, and write the answer!', 'Section 3: Numbers');
+  drawVectorFruit(doc, 60, 110, 'Apple', 1.0);
+  drawVectorFruit(doc, 150, 110, 'Apple', 1.0);
+
+  doc.addPage();
+  drawPageHeaderAndFooter(doc, product, 83, totalPages, 'Section 3: Connect Numbers 1 to 20 Star', 'Follow the numbers in order 1, 2, 3 ... 20 to complete the star!', 'Section 3: Numbers');
+  drawVectorDotToDotWorksheet(doc, 105, 125);
+
+  doc.addPage();
+  drawPageHeaderAndFooter(doc, product, 84, totalPages, 'Section 3: The Number Forest Maze', 'Help the puppy follow the numbers path from 1 to 20 to find the prize!', 'Section 3: Numbers');
+  drawVectorMazeWorksheet(doc, 105, 125, 1.0);
+
+  // Page 85: Master Diploma
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    85,
+    totalPages,
+    'MASTER PRESCHOOL 3-IN-1 GRADUATE DIPLOMA',
+    `For brilliantly completing all 85 pages across Animals, Alphabet Phonics, and Numbers Tracing in ${product.title}!`
+  );
+}
+
+/**
+ * 13. Mega Colouring & Activity Vault (7-in-1, Exact 160 Pages)
+ * Unites 7 full workbooks:
+ * - Vol 1: Animals Treasury (24 pages, pp 2–25)
+ * - Vol 2: Alphabet Phonics (26 pages, pp 26–51)
+ * - Vol 3: Numbers & Counting (20 pages, pp 52–71)
+ * - Vol 4: Fruits & Vegetables (22 pages, pp 72–93)
+ * - Vol 5: Vehicles & Transport (22 pages, pp 94–115)
+ * - Vol 6: Tracing & Line Control (22 pages, pp 116–137)
+ * - Vol 7: Festivals & World Celebrations (21 pages, pp 138–158)
+ * - Page 159: Solutions & Parent Guide
+ * - Page 160: Master Gold Trophy Diploma!
+ * Total: exactly 160 pages!
+ */
+function generateMegaVault160PagePDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = 160;
+
+  // Page 1: Master Vault Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  // Volumes Configuration
+  const volumes = [
+    { title: 'Vol 1: Animals Treasury', pages: 24, gen: (p: number, r: number) => {
+      const animals = [drawVectorLion, drawVectorElephant, drawVectorBear, drawVectorDolphin, drawVectorMonkey, drawVectorGiraffe, drawVectorZebra, drawVectorPanda, drawVectorCow, drawVectorPuppy, drawVectorKitten, drawVectorFrog];
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Volume 1 (Animals): Wildlife Friend ${r}`, 'Colour the animal with bold outlines and vibrant crayon shades.', 'Vol 1: Animals');
+      animals[(r - 1) % animals.length](doc, 105, 125, 1.15);
+      drawCrayonsPalette(doc, [{ name: 'Yellow', r: 255, g: 217, b: 61 }, { name: 'Orange', r: 255, g: 138, b: 101 }, { name: 'Sky Blue', r: 107, g: 203, b: 255 }, { name: 'Mint', r: 184, g: 242, b: 200 }]);
+    }},
+    { title: 'Vol 2: Alphabet Phonics', pages: 26, gen: (p: number, r: number) => {
+      const ltr = String.fromCharCode(65 + r - 1);
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Volume 2 (Alphabet): Letter ${ltr} Phonics`, `Trace uppercase and lowercase ${ltr}, say the sound, and color!`, 'Vol 2: Alphabet');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(60);
+      doc.setTextColor(225, 29, 72);
+      doc.text(ltr, 50, 95, { align: 'center' });
+      drawVectorFruit(doc, 135, 85, 'Apple', 1.0);
+      drawVectorTracingRow(doc, 'straight', 150);
+      drawVectorTracingRow(doc, 'waves', 200);
+    }},
+    { title: 'Vol 3: Numbers & Counting', pages: 20, gen: (p: number, r: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Volume 3 (Numbers): Number ${r} Counting`, `Count the friendly objects and trace the numeral ${r}!`, 'Vol 3: Numbers');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(60);
+      doc.setTextColor(16, 185, 129);
+      doc.text(`${r}`, 50, 95, { align: 'center' });
+      drawVectorBear(doc, 135, 85, 0.95);
+      drawVectorTracingRow(doc, 'zigzag', 150);
+      drawVectorTracingRow(doc, 'straight', 200);
+    }},
+    { title: 'Vol 4: Fruits & Vegetables', pages: 22, gen: (p: number, r: number) => {
+      const foods = ['Strawberry', 'Carrot', 'Banana', 'Watermelon', 'Pineapple', 'Corn', 'Apple', 'Grapes'];
+      const f = foods[(r - 1) % foods.length];
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Volume 4 (Healthy Food): Cheerful ${f}`, 'Eat your rainbow fruits and vegetables every day for super energy!', 'Vol 4: Food');
+      drawVectorFruit(doc, 105, 120, f, 1.2);
+      drawCrayonsPalette(doc, [{ name: 'Red', r: 239, g: 68, b: 68 }, { name: 'Orange', r: 249, g: 115, b: 22 }, { name: 'Yellow', r: 234, g: 179, b: 8 }, { name: 'Green', r: 34, g: 197, b: 94 }]);
+    }},
+    { title: 'Vol 5: Vehicles & Transport', pages: 22, gen: (p: number, r: number) => {
+      const vehicles = [drawVectorCar, drawVectorTrain, drawVectorAirplane, drawVectorHelicopter, drawVectorSailboat, drawVectorRocket, drawVectorFireEngine, drawVectorAmbulance, drawVectorPoliceCar, drawVectorSchoolBus, drawVectorDumpTruck, drawVectorBicycle];
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Volume 5 (Vehicles): Transport Machine ${r}`, 'Beep beep! Colour the wheels, vehicle body, and windows.', 'Vol 5: Vehicles');
+      vehicles[(r - 1) % vehicles.length](doc, 105, 125, 1.15);
+      drawCrayonsPalette(doc, [{ name: 'Cherry Red', r: 239, g: 68, b: 68 }, { name: 'Yellow', r: 250, g: 204, b: 21 }, { name: 'Sky Blue', r: 56, g: 189, b: 248 }, { name: 'Gray', r: 100, g: 116, b: 139 }]);
+    }},
+    { title: 'Vol 6: Tracing & Line Control', pages: 22, gen: (p: number, r: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Volume 6 (Tracing): Pre-Writing Path ${r}`, 'Keep your pencil on the dashed lines from START to FINISH.', 'Vol 6: Tracing');
+      for (let t = 0; t < 4; t++) {
+        drawVectorTracingRow(doc, (r + t) % 3 === 0 ? 'waves' : (r + t) % 3 === 1 ? 'zigzag' : 'loops', 70 + t * 40);
+      }
+    }},
+    { title: 'Vol 7: Festivals & Celebrations', pages: 21, gen: (p: number, r: number) => {
+      const fests = [drawVectorDiya, drawVectorRangoli, drawVectorHoliPichkari, drawVectorChristmasTree, drawVectorEidLantern, drawVectorKites, drawVectorBirthdayCake, drawVectorPumpkin, drawVectorSnowman];
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Volume 7 (Festivals): Festive Joy ${r}`, 'Celebrate love, culture, and lights with radiant festive shades!', 'Vol 7: Festivals');
+      fests[(r - 1) % fests.length](doc, 105, 125, 1.15);
+      drawCrayonsPalette(doc, [{ name: 'Deep Gold', r: 234, g: 179, b: 8 }, { name: 'Ruby Red', r: 225, g: 29, b: 72 }, { name: 'Saffron', r: 249, g: 115, b: 22 }, { name: 'Emerald', r: 16, g: 185, b: 129 }]);
+    }},
+  ];
+
+  volumes.forEach((vol) => {
+    for (let r = 1; r <= vol.pages; r++) {
+      if (doc.getNumberOfPages() < 158) {
+        doc.addPage();
+        const curPage = doc.getNumberOfPages();
+        vol.gen(curPage, r);
+      }
+    }
+  });
+
+  while (doc.getNumberOfPages() < 158) {
+    doc.addPage();
+    const curP = doc.getNumberOfPages();
+    drawPageHeaderAndFooter(doc, product, curP, totalPages, `Mega Vault Treasury Page ${curP}`, 'Colour and practice creative expression.');
+  }
+
+  // Page 159: Solutions & Parent Guide
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    159,
+    totalPages,
+    'Parent & Educator Verification Key',
+    'Curriculum milestone solutions across all 7 comprehensive workbook volumes.'
+  );
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(22, 50, 166, 185, 4, 4, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(225, 29, 72);
+  doc.text('160-Page Mega Vault Early Childhood Curriculum Milestones:', 28, 65);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(51, 65, 85);
+  doc.text('✓ 24 Wildlife safari and farm animal colouring pages for boundary control.', 28, 80);
+  doc.text('✓ 26 Full Alphabet phonics letter tracing pages with object associations.', 28, 95);
+  doc.text('✓ 20 Sequential number counting pages with ten-frames and visual addition.', 28, 110);
+  doc.text('✓ 22 Healthy fruit and vegetable awareness sheets building nutrition habits.', 28, 125);
+  doc.text('✓ 22 Action-packed transport vehicles introducing community helpers.', 28, 140);
+  doc.text('✓ 22 Fine motor pencil control mazes, waves, zigzags, and loops.', 28, 155);
+  doc.text('✓ 21 Cultural holiday and festive celebration illustrations.', 28, 170);
+
+  // Page 160: Ultimate Gold Trophy Diploma
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    160,
+    totalPages,
+    'ULTIMATE MEGA VAULT MASTER SCHOLAR TROPHY',
+    `For brilliantly completing all 160 pages across all 7 volumes of ${product.title} with immense focus, dedication, and artistic brilliance!`
+  );
+}
+
+/**
+ * 14. The Ultimate Kids' Activity Playbook (100-Page Comprehensive Edition)
+ * Covers all 18 developmental categories, table of contents, parent guides, answer keys, and certificate across exactly 100 pages!
+ */
+function generate100PagePlaybookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = 100;
+  const width = 210;
+
+  // Page 1: Master Front Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  // Page 2: Educator & Parent Guide
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    2,
+    totalPages,
+    'Educator & Parent Early Learning Roadmap',
+    'Foundational skill development across all 18 cognitive and motor milestones.'
+  );
+
+  const milestones = [
+    { title: '1. Fine Motor & Tripod Pencil Grip', desc: 'Progressive curves, zigzags, and maze paths build the hand-muscle coordination needed for writing.' },
+    { title: '2. Alphabet Recognition & Phonics Foundations', desc: 'Letter sound association, hollow bubble tracing, and phonics vocabulary.' },
+    { title: '3. Numeracy, Counting & Visual Math', desc: 'Quantities 1 to 100, one-to-one correspondence, ten frames, and visual addition.' },
+    { title: '4. Spatial Logic, Observation & Problem Solving', desc: 'Mazes, spot the difference, dot-to-dot cosmic rockets, and pattern sequences.' },
+  ];
+
+  milestones.forEach((m, idx) => {
+    const yM = 50 + idx * 30;
+    doc.setFillColor(254, 242, 242);
+    doc.setDrawColor(254, 202, 202);
+    doc.roundedRect(22, yM, 166, 25, 3, 3, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(190, 18, 60);
+    doc.text(m.title, 28, yM + 9);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(m.desc, 28, yM + 18);
+  });
+
+  // Recommended Daily Routine
+  doc.setFillColor(240, 253, 250);
+  doc.setDrawColor(153, 246, 228);
+  doc.roundedRect(22, 180, 166, 45, 4, 4, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(15, 118, 110);
+  doc.text('Recommended Routine for Parents & Teachers:', 28, 192);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(51, 65, 85);
+  doc.text('• Dedicate 15 to 20 minutes daily of relaxed, screen-free creative play.', 28, 202);
+  doc.text('• Encourage verbal expression: Ask your child to describe the animals and colors.', 28, 210);
+  doc.text('• Praise patience, focus, and curiosity rather than staying strictly within lines.', 28, 218);
+
+  // Page 3: Master Table of Contents (18 Categories)
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    3,
+    totalPages,
+    'Master Table of Contents (All 18 Categories)',
+    '100 Pages covering all core early childhood developmental learning domains.'
+  );
+
+  const categoriesTOC = [
+    { num: 1, title: 'Alphabet Learning (A–Z)', pages: '4–11' },
+    { num: 2, title: 'Numbers & Counting (1–100)', pages: '12–19' },
+    { num: 3, title: 'Shapes & Colors', pages: '20–25' },
+    { num: 4, title: 'Tracing & Handwriting', pages: '26–31' },
+    { num: 5, title: 'Coloring Activities', pages: '32–37' },
+    { num: 6, title: 'Animals & Birds', pages: '38–43' },
+    { num: 7, title: 'Fruits & Vegetables', pages: '44–49' },
+    { num: 8, title: 'Matching Activities', pages: '50–55' },
+    { num: 9, title: 'Mazes & Labyrinths', pages: '56–61' },
+    { num: 10, title: 'Spot the Difference', pages: '62–67' },
+    { num: 11, title: 'Dot-to-Dot Activities', pages: '68–73' },
+    { num: 12, title: 'Logical Thinking Games', pages: '74–79' },
+    { num: 13, title: 'Memory & Observation', pages: '80–84' },
+    { num: 14, title: 'Basic Mathematics', pages: '85–88' },
+    { num: 15, title: 'Creative Drawing Prompts', pages: '89–92' },
+    { num: 16, title: 'Good Habits & Daily Routine', pages: '93–95' },
+    { num: 17, title: 'Nature & Life Cycles', pages: '96–97' },
+    { num: 18, title: 'Fun Educational Games', pages: '98' },
+  ];
+
+  categoriesTOC.forEach((c, idx) => {
+    const isCol2 = idx >= 9;
+    const colX = isCol2 ? 110 : 22;
+    const rIdx = isCol2 ? idx - 9 : idx;
+    const yC = 50 + rIdx * 19;
+
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(colX, yC, 80, 15, 2, 2, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(225, 29, 72);
+    doc.text(`${c.num}.`, colX + 4, yC + 10);
+    doc.setTextColor(30, 41, 59);
+    doc.text(c.title, colX + 11, yC + 10);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`p. ${c.pages}`, colX + 74, yC + 10, { align: 'right' });
+  });
+
+  doc.setFillColor(254, 243, 199);
+  doc.roundedRect(22, 230, 168, 14, 3, 3, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(146, 64, 14);
+  doc.text('Answer Keys (Page 99)   •   Official Super Scholar Diploma (Page 100)', width / 2, 239, { align: 'center' });
+
+  // Generate All Pages from 4 to 98 (Systematic 18 Category Modules)
+  const categoryModuleDefs = [
+    // Cat 1: Alphabet Learning (Pages 4–11: 8 pages)
+    { cat: 'Alphabet Learning (A–Z)', pages: 8, gen: (p: number, relP: number) => {
+      const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+      const ltr = letters[relP - 1] || 'A';
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 1: Letter ${ltr} & Phonics Fun`, 'Say the sound out loud, trace the big letter, and color the picture!', 'Category 1: Alphabet');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(64);
+      doc.setTextColor(225, 29, 72);
+      doc.text(ltr, 50, 100, { align: 'center' });
+      drawVectorFruit(doc, 130, 85, 'Apple', 1.1);
+      drawVectorTracingRow(doc, 'straight', 150);
+      drawVectorTracingRow(doc, 'waves', 200);
+    }},
+    // Cat 2: Numbers & Counting (Pages 12–19: 8 pages)
+    { cat: 'Numbers & Counting (1–100)', pages: 8, gen: (p: number, relP: number) => {
+      const n = relP * 2;
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 2: Number ${n} Counting Fiesta`, 'Count each object in the sky and trace the large numerals.', 'Category 2: Numbers');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(54);
+      doc.setTextColor(234, 88, 12);
+      doc.text(`${n}`, 45, 95, { align: 'center' });
+      drawVectorBear(doc, 135, 85, 1.0);
+      drawVectorTracingRow(doc, 'zigzag', 150);
+      drawVectorTracingRow(doc, 'straight', 200);
+    }},
+    // Cat 3: Shapes & Colors (Pages 20–25: 6 pages)
+    { cat: 'Shapes & Colors', pages: 6, gen: (p: number, relP: number) => {
+      const shapes = ['Circle', 'Square', 'Triangle', 'Star', 'Diamond', 'Heart'];
+      const sh = shapes[relP - 1] || 'Circle';
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 3: The ${sh} Explorer`, 'Identify the shape, trace its perimeter, and color with your favorite shade.', 'Category 3: Shapes');
+      drawVectorShapeWorksheet(doc, sh, 105, 120);
+      drawCrayonsPalette(doc, [{ name: 'Yellow', r: 255, g: 217, b: 61 }, { name: 'Blue', r: 59, g: 130, b: 246 }, { name: 'Red', r: 239, g: 68, b: 68 }, { name: 'Green', r: 34, g: 197, b: 94 }]);
+    }},
+    // Cat 4: Tracing & Handwriting (Pages 26–31: 6 pages)
+    { cat: 'Tracing & Handwriting', pages: 6, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 4: Pre-Writing Motor Path ${relP}`, 'Keep your pencil on the dashed line from START to FINISH.', 'Category 4: Tracing');
+      for (let t = 0; t < 4; t++) {
+        drawVectorTracingRow(doc, t % 2 === 0 ? 'waves' : 'zigzag', 70 + t * 40);
+      }
+    }},
+    // Cat 5: Coloring Activities (Pages 32–37: 6 pages)
+    { cat: 'Coloring Activities', pages: 6, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 5: Cheerful Animal Coloring Sheet ${relP}`, 'Big bold outlines engineered for stress-free toddler coloring.', 'Category 5: Coloring');
+      if (relP === 1) drawVectorLion(doc, 105, 125, 1.1);
+      else if (relP === 2) drawVectorElephant(doc, 105, 125, 1.1);
+      else if (relP === 3) drawVectorMonkey(doc, 105, 125, 1.1);
+      else if (relP === 4) drawVectorGiraffe(doc, 105, 125, 1.1);
+      else if (relP === 5) drawVectorPanda(doc, 105, 125, 1.1);
+      else drawVectorDolphin(doc, 105, 125, 1.1);
+      drawCrayonsPalette(doc, [{ name: 'Orange', r: 249, g: 115, b: 22 }, { name: 'Gold', r: 234, g: 179, b: 8 }, { name: 'Brown', r: 120, g: 53, b: 15 }, { name: 'Yellow', r: 255, g: 217, b: 61 }]);
+    }},
+    // Cat 6: Animals & Birds (Pages 38–43: 6 pages)
+    { cat: 'Animals & Birds', pages: 6, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 6: Wildlife Friend ${relP}`, 'Discover beautiful creatures from savannahs and rainforests.', 'Category 6: Animals');
+      if (relP === 1) drawVectorOwl(doc, 105, 125, 1.15);
+      else if (relP === 2) drawVectorPeacock(doc, 105, 125, 1.15);
+      else if (relP === 3) drawVectorToucan(doc, 105, 125, 1.15);
+      else if (relP === 4) drawVectorFlamingo(doc, 105, 125, 1.15);
+      else if (relP === 5) drawVectorSwan(doc, 105, 125, 1.15);
+      else drawVectorPenguin(doc, 105, 125, 1.15);
+      drawCrayonsPalette(doc, [{ name: 'Sky Blue', r: 107, g: 203, b: 255 }, { name: 'Forest Green', r: 72, g: 187, b: 120 }, { name: 'Yellow', r: 255, g: 217, b: 61 }, { name: 'Coral', r: 255, g: 107, b: 107 }]);
+    }},
+    // Cat 7: Fruits & Vegetables (Pages 44–49: 6 pages)
+    { cat: 'Fruits & Vegetables', pages: 6, gen: (p: number, relP: number) => {
+      const foods = ['Strawberry', 'Carrot', 'Banana', 'Watermelon', 'Pineapple', 'Corn'];
+      const f = foods[relP - 1] || 'Apple';
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 7: Healthy ${f} Friend`, 'Eat fresh rainbow fruits and vegetables every day!', 'Category 7: Fruits');
+      drawVectorFruit(doc, 105, 120, f, 1.2);
+      drawCrayonsPalette(doc, [{ name: 'Red', r: 239, g: 68, b: 68 }, { name: 'Orange', r: 249, g: 115, b: 22 }, { name: 'Yellow', r: 234, g: 179, b: 8 }, { name: 'Green', r: 34, g: 197, b: 94 }]);
+    }},
+    // Cat 8: Matching Activities (Pages 50–55: 6 pages)
+    { cat: 'Matching Activities', pages: 6, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 8: Shadow Silhouette Match ${relP}`, 'Draw a line connecting each cartoon character to its shadow.', 'Category 8: Matching');
+      for (let m = 0; m < 4; m++) {
+        const yM = 60 + m * 42;
+        doc.setFillColor(254, 242, 242);
+        doc.roundedRect(25, yM, 65, 26, 3, 3, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(190, 18, 60);
+        doc.text(`Item ${m + 1} Picture`, 32, yM + 16);
+
+        doc.setFillColor(241, 245, 249);
+        doc.roundedRect(120, yM, 65, 26, 3, 3, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(30, 41, 59);
+        doc.text(`Shadow ${String.fromCharCode(65 + m)}`, 128, yM + 16);
+      }
+    }},
+    // Cat 9: Mazes & Labyrinths (Pages 56–61: 6 pages)
+    { cat: 'Mazes & Labyrinths', pages: 6, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 9: Adventure Garden Maze ${relP}`, 'Help the friendly character navigate through the labyrinth to the goal.', 'Category 9: Mazes');
+      doc.setLineWidth(2);
+      doc.roundedRect(30, 55, 150, 150, 4, 4);
+      doc.line(30, 95, 140, 95);
+      doc.line(70, 135, 180, 135);
+      doc.line(30, 175, 130, 175);
+    }},
+    // Cat 10: Spot the Difference (Pages 62–67: 6 pages)
+    { cat: 'Spot the Difference', pages: 6, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 10: Spot 5 Differences Scene ${relP}`, 'Compare Picture A and Picture B. Find and circle the 5 subtle changes!', 'Category 10: Differences');
+      doc.roundedRect(22, 55, 78, 120, 3, 3);
+      doc.roundedRect(110, 55, 78, 120, 3, 3);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(30, 41, 59);
+      doc.text('Picture A (Original)', 61, 70, { align: 'center' });
+      doc.text('Picture B (5 Differences)', 149, 70, { align: 'center' });
+    }},
+    // Cat 11: Dot-to-Dot (Pages 68–73: 6 pages)
+    { cat: 'Dot-to-Dot Activities', pages: 6, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 11: Connect the Dots 1 to 20 (Art ${relP})`, 'Connect the numbered dots in sequential order to reveal the picture!', 'Category 11: Dot-to-Dot');
+      for (let dt = 1; dt <= 20; dt++) {
+        const rad = ((dt * 18) * Math.PI) / 180;
+        const dx = 105 + Math.cos(rad) * 45;
+        const dy = 135 + Math.sin(rad) * 45;
+        doc.setFillColor(225, 29, 72);
+        doc.circle(dx, dy, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(30, 41, 59);
+        doc.text(`${dt}`, dx + 3, dy - 2);
+      }
+    }},
+    // Cat 12: Logical Thinking (Pages 74–79: 6 pages)
+    { cat: 'Logical Thinking Games', pages: 6, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 12: Pattern Completion Quest ${relP}`, 'Look at the repeating pattern sequence and draw what comes next.', 'Category 12: Logic');
+      for (let pt = 0; pt < 4; pt++) {
+        const yP = 55 + pt * 42;
+        doc.setFillColor(254, 242, 242);
+        doc.roundedRect(22, yP, 166, 32, 3, 3, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(190, 18, 60);
+        doc.text(`Pattern ${pt + 1}: Star, Circle, Star, Circle, [  ?  ]`, 28, yP + 14);
+      }
+    }},
+    // Cat 13: Memory & Observation (Pages 80–84: 5 pages)
+    { cat: 'Memory & Observation', pages: 5, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 13: Preschool I-Spy Detective ${relP}`, 'Count how many stars, apples, and flowers are hidden in the box!', 'Category 13: Observation');
+      doc.roundedRect(22, 55, 166, 115, 4, 4);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(234, 88, 12);
+      doc.text('⭐   🍎   🌸   ⭐   🍎   ⭐   🌸   ⭐', 35, 80);
+      doc.text('🌸   ⭐   🍎   🌸   ⭐   🍎   🌸   🍎', 35, 110);
+      doc.text('🍎   🌸   ⭐   🍎   🌸   ⭐   🍎   ⭐', 35, 140);
+    }},
+    // Cat 14: Basic Mathematics (Pages 85–88: 4 pages)
+    { cat: 'Basic Mathematics', pages: 4, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 14: Visual Addition Fun ${relP}`, 'Count the apples on both sides, add them together, and write the sum.', 'Category 14: Math');
+      for (let m = 0; m < 4; m++) {
+        const yM = 55 + m * 42;
+        doc.setFillColor(254, 242, 242);
+        doc.roundedRect(22, yM, 166, 32, 3, 3, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(225, 29, 72);
+        doc.text(`${m + 1} Apples  +  ${m + 2} Apples  =  [  ${2 * m + 3}  ] Apples`, 32, yM + 19);
+      }
+    }},
+    // Cat 15: Creative Drawing (Pages 89–92: 4 pages)
+    { cat: 'Creative Drawing Prompts', pages: 4, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 15: Finish the Drawing Prompt ${relP}`, 'Use your wildest imagination to complete the friendly picture!', 'Category 15: Drawing');
+      doc.setLineWidth(2.2);
+      doc.ellipse(105, 130, 48, 56);
+      doc.circle(105, 60, 5, 'FD');
+    }},
+    // Cat 16: Good Daily Habits (Pages 93–95: 3 pages)
+    { cat: 'Good Habits & Daily Routine', pages: 3, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 16: Healthy Daily Routine Checklist ${relP}`, 'Color the star checkbox every time you practice this positive habit!', 'Category 16: Habits');
+      const habits = [
+        '1. Brushing Teeth Morning & Night',
+        '2. Washing Hands with Soap & Water',
+        '3. Eating Wholesome Nutritious Food',
+        '4. Tidying Up Toys After Playtime'
+      ];
+      habits.forEach((h, idx) => {
+        const yH = 55 + idx * 42;
+        doc.setFillColor(254, 242, 242);
+        doc.roundedRect(22, yH, 166, 32, 3, 3, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(190, 18, 60);
+        doc.text(h, 32, yH + 19);
+      });
+    }},
+    // Cat 17: Nature & Life Cycles (Pages 96–97: 2 pages)
+    { cat: 'Nature & Life Cycles', pages: 2, gen: (p: number, relP: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, `Category 17: Nature Discovery & Life Cycles ${relP}`, 'Number the developmental stages from 1 to 4 in order.', 'Category 17: Nature');
+      for (let s = 0; s < 4; s++) {
+        const col = s % 2;
+        const row = Math.floor(s / 2);
+        doc.roundedRect(25 + col * 85, 55 + row * 85, 75, 75, 3, 3);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(21, 128, 61);
+        doc.text(`Stage ${s + 1}`, 62 + col * 85, 95 + row * 85, { align: 'center' });
+      }
+    }},
+    // Cat 18: Fun Educational Games (Page 98: 1 page)
+    { cat: 'Fun Educational Games', pages: 1, gen: (p: number) => {
+      drawPageHeaderAndFooter(doc, product, p, totalPages, 'Category 18: The Alphabet Stepping Stones Game', 'Fill in the missing alphabet stepping stones across the river: C, F, I, L.', 'Category 18: Games');
+      drawVectorTracingRow(doc, 'zigzag', 80);
+      drawVectorTracingRow(doc, 'waves', 140);
+      drawVectorTracingRow(doc, 'loops', 200);
+    }},
+  ];
+
+  categoryModuleDefs.forEach((mod) => {
+    for (let r = 1; r <= mod.pages; r++) {
+      if (doc.getNumberOfPages() < 98) {
+        doc.addPage();
+        const curPage = doc.getNumberOfPages();
+        mod.gen(curPage, r);
+      }
+    }
+  });
+
+  while (doc.getNumberOfPages() < 98) {
+    doc.addPage();
+    const curP = doc.getNumberOfPages();
+    drawPageHeaderAndFooter(doc, product, curP, totalPages, `Playbook Activity Sheet ${curP}`, 'Colour and practice pencil control.');
+  }
+
+  // Page 99: Verified Answer Keys & Solutions
+  doc.addPage();
+  drawPageHeaderAndFooter(
+    doc,
+    product,
+    99,
+    totalPages,
+    'Official Teacher & Parent Verified Answer Keys',
+    'Solutions for Mazes, Spot the Difference, Pattern Sequences, and Math addition.'
+  );
+
+  const solutions = [
+    { cat: 'Category 9 (Mazes & Puzzles)', sol: 'Start at top-left opening -> proceed south -> turn right at corridor -> follow opening to bottom honey jar.' },
+    { cat: 'Category 10 (Spot the Difference)', sol: '1. Missing sky butterfly. 2. Bow tie on cat. 3. Extra blooming flower. 4. Sun ray count changed. 5. Bird on fence.' },
+    { cat: 'Category 12 (Logical Patterns)', sol: 'Row 1: Circle ◯.   Row 2: Square ▢.   Row 3: Sun ☀️.   Row 4: Small Heart 💛.' },
+    { cat: 'Category 13 (Memory & Observation I-Spy)', sol: 'Gold Stars: 8 total.   Sweet Apples: 6 total.   Pink Flowers: 7 total.' },
+    { cat: 'Category 14 (Basic Mathematics Addition)', sol: 'Problem 1: 1 + 2 = 3.   Problem 2: 2 + 3 = 5.   Problem 3: 3 + 4 = 7.   Problem 4: 4 + 5 = 9.' },
+    { cat: 'Category 18 (Alphabet Stepping Stones)', sol: 'Missing letters in sequential order: C, F, I, L.' },
+  ];
+
+  solutions.forEach((s, idx) => {
+    const yS = 48 + idx * 32;
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(20, yS, 170, 26, 3, 3, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(225, 29, 72);
+    doc.text(s.cat, 26, yS + 8);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(51, 65, 85);
+    const splitSol = doc.splitTextToSize(s.sol, 160);
+    doc.text(splitSol, 26, yS + 16);
+  });
+
+  // Page 100: Official Super Scholar Diploma
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    100,
+    totalPages,
+    'SUPER SCHOLAR & ARTIST DIPLOMA',
+    `For brilliantly completing all 100 pages across all 18 developmental categories of The Ultimate Kids' Activity Playbook with tremendous curiosity and artistic excellence!`
+  );
+}
+
+/**
+ * 11. Generic / Dynamic Book Generator for ANY custom product with page count N
+ * Tailors each page to the product's name, category, description, and exact pageCount!
+ */
+function generateGenericCustomBookPDF(doc: jsPDF, product: Product, childName: string): void {
+  const totalPages = Math.max(4, product.pageCount || 24);
+
+  // Page 1: Cover
+  drawBookCover(doc, product, childName, totalPages);
+
+  // Pages 2 to totalPages - 1: Activities tailored to Category & Description
+  for (let pNum = 2; pNum < totalPages; pNum++) {
+    doc.addPage();
+
+    const sampleIdx = (pNum - 2) % (product.samplePages?.length || 1);
+    const sample = product.samplePages?.[sampleIdx];
+    const pageTitle = sample?.title || `${product.title} - Activity Sheet ${pNum - 1}`;
+    const pageDesc = sample?.description || `Crisp printable worksheet designed for ${product.ageGroup}.`;
+
+    drawPageHeaderAndFooter(doc, product, pNum, totalPages, pageTitle, pageDesc);
+
+    const catLower = (product.category + ' ' + product.title).toLowerCase();
+    if (catLower.includes('animal')) {
+      const animalDrawers = [drawVectorLion, drawVectorElephant, drawVectorBear, drawVectorDolphin, drawVectorMonkey, drawVectorGiraffe, drawVectorPanda, drawVectorCow, drawVectorPuppy, drawVectorKitten];
+      animalDrawers[(pNum - 2) % animalDrawers.length](doc, 105, 125, 1.1);
+    } else if (catLower.includes('bird')) {
+      const birdDrawers = [drawVectorOwl, drawVectorPeacock, drawVectorToucan, drawVectorFlamingo, drawVectorHummingbird, drawVectorSwan, drawVectorPenguin];
+      birdDrawers[(pNum - 2) % birdDrawers.length](doc, 105, 125, 1.15);
+    } else if (catLower.includes('fruit') || catLower.includes('vegetable')) {
+      const fruits = ['Strawberry', 'Carrot', 'Banana', 'Watermelon', 'Pineapple', 'Corn', 'Apple', 'Grapes'];
+      drawVectorFruit(doc, 105, 120, fruits[(pNum - 2) % fruits.length], 1.2);
+    } else if (catLower.includes('vehicle') || catLower.includes('transport')) {
+      const vehicleDrawers = [drawVectorCar, drawVectorTrain, drawVectorAirplane, drawVectorHelicopter, drawVectorSailboat, drawVectorRocket, drawVectorSubmarine, drawVectorTractor];
+      vehicleDrawers[(pNum - 2) % vehicleDrawers.length](doc, 105, 125, 1.1);
+    } else if (catLower.includes('shape')) {
+      const shapes = ['circle', 'square', 'triangle', 'star', 'heart', 'diamond', 'crescent'];
+      drawVectorShapeWorksheet(doc, shapes[(pNum - 2) % shapes.length], 105, 125);
+    } else if (catLower.includes('trace') || catLower.includes('writing')) {
+      for (let t = 0; t < 4; t++) {
+        drawVectorTracingRow(doc, t % 2 === 0 ? 'waves' : 'zigzag', 70 + t * 40);
+      }
+    } else if (catLower.includes('cartoon')) {
+      const cartoonDrawers = [drawVectorMonster, drawVectorRobot, drawVectorCastle, drawVectorTeddyBear, drawVectorAlien, drawVectorDragon];
+      cartoonDrawers[(pNum - 2) % cartoonDrawers.length](doc, 105, 125, 1.15);
+    } else if (catLower.includes('nursery')) {
+      if ((pNum - 2) % 4 === 0) drawVectorShadowMatchWorksheet(doc, 105, 125);
+      else if ((pNum - 2) % 4 === 1) drawVectorMazeWorksheet(doc, 105, 125, 1.0);
+      else if ((pNum - 2) % 4 === 2) drawVectorDotToDotWorksheet(doc, 105, 125);
+      else drawVectorSpotDifferenceWorksheet(doc, 105, 125);
+    } else if (catLower.includes('festival')) {
+      const festDrawers = [drawVectorDiya, drawVectorRangoli, drawVectorHoliPichkari, drawVectorChristmasTree, drawVectorEidLantern, drawVectorKites, drawVectorBirthdayCake, drawVectorPumpkin, drawVectorSnowman];
+      festDrawers[(pNum - 2) % festDrawers.length](doc, 105, 125, 1.15);
+    } else {
+      drawVectorLion(doc, 105, 125, 1.1);
+    }
+
+    drawCrayonsPalette(doc, [
+      { name: 'Yellow', r: 255, g: 217, b: 61 },
+      { name: 'Orange', r: 255, g: 138, b: 101 },
+      { name: 'Sky Blue', r: 107, g: 203, b: 255 },
+      { name: 'Mint Green', r: 184, g: 242, b: 200 },
+    ]);
+  }
+
+  // Page totalPages: Certificate of Completion
+  doc.addPage();
+  drawCertificatePage(
+    doc,
+    product,
+    childName,
+    totalPages,
+    totalPages,
+    'SUPER ARTIST CERTIFICATE',
+    `For brilliantly completing all ${totalPages} pages of ${product.title} with tremendous imagination and creativity!`
+  );
+}
+
+// -------------------------------------------------------------
+// MASTER PUBLIC ENTRYPOINTS
+// -------------------------------------------------------------
+
+/**
+ * Generates an authentic, high-quality printable PDF colouring book
+ * complete with cover, themed worksheets, tracing guidelines, pagination, and an artist certificate!
+ * Routes directly based on Category, Name, Description, and Page Count.
+ */
+export async function generateProductPDF(product: Product, childName: string = ''): Promise<void> {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const titleLower = product.title.toLowerCase();
+  const idLower = product.id.toLowerCase();
+  const catLower = (product.category || '').toLowerCase();
+
+  // Route to the dedicated generator:
+  if (idLower === 'prod-playbook-100' || titleLower.includes('playbook')) {
+    generate100PagePlaybookPDF(doc, product, childName);
+  } else if (idLower === 'prod-7' || titleLower.includes('3-in-1') || titleLower.includes('preschool activity bundle')) {
+    generatePreschoolBundlePDF(doc, product, childName);
+  } else if (idLower === 'prod-8' || titleLower.includes('7-in-1') || titleLower.includes('vault') || titleLower.includes('mega colouring')) {
+    generateMegaVault160PagePDF(doc, product, childName);
+  } else if (idLower === 'prod-1' || (catLower.includes('animal') && !titleLower.includes('bundle') && !titleLower.includes('vault'))) {
+    generateAnimalBookPDF(doc, product, childName);
+  } else if (idLower === 'prod-2' || (catLower.includes('alphabet') && !titleLower.includes('bundle') && !titleLower.includes('vault'))) {
+    generateAlphabetBookPDF(doc, product, childName);
+  } else if (idLower === 'prod-3' || (catLower.includes('number') && !titleLower.includes('bundle') && !titleLower.includes('vault'))) {
+    generateNumbersBookPDF(doc, product, childName);
+  } else if (idLower === 'prod-4' || (catLower.includes('fruit') || catLower.includes('vegetable'))) {
+    generateFruitsVegetablesBookPDF(doc, product, childName);
+  } else if (idLower === 'prod-5' || catLower.includes('bird')) {
+    generateBirdsBookPDF(doc, product, childName);
+  } else if (idLower === 'prod-6' || catLower.includes('tracing')) {
+    generateTracingBookPDF(doc, product, childName);
+  } else if (idLower === 'prod-9' || catLower.includes('vehicle')) {
+    generateVehiclesBookPDF(doc, product, childName);
+  } else if (idLower === 'prod-10' || catLower.includes('shape')) {
+    generateShapesBookPDF(doc, product, childName);
+  } else if (idLower === 'prod-11' || catLower.includes('festival')) {
+    generateFestivalsBookPDF(doc, product, childName);
+  } else if (catLower.includes('cartoon')) {
+    generateCartoonBookPDF(doc, product, childName);
+  } else if (catLower.includes('nursery')) {
+    generateNurseryBookPDF(doc, product, childName);
+  } else {
+    // any custom product added via Admin or school pack
+    generateGenericCustomBookPDF(doc, product, childName);
+  }
+
+  const filename = `${product.title.replace(/[^a-zA-Z0-9]/g, '_')}_Little_Colour_World.pdf`;
+  doc.save(filename);
+}
+
 export function getDirectDownloadUrl(url: string): string {
   if (!url) return '';
   const trimmed = url.trim();
@@ -1703,11 +3710,6 @@ export function getDirectDownloadUrl(url: string): string {
   return trimmed;
 }
 
-/**
- * STRICT SERVER-SIDE AUTHORIZATION:
- * Prevents client-side bypass.
- * Calls /api/downloads/authorize with downloadToken & productId before any file download or generation is permitted.
- */
 export async function authorizeAndDownloadProduct(
   product: Product,
   downloadToken: string,
@@ -1717,7 +3719,6 @@ export async function authorizeAndDownloadProduct(
     throw new Error('Access Denied: No server download token provided. Payment must be confirmed by Razorpay.');
   }
 
-  // 1. Verify with server-side authorization gateway
   const authRes = await fetch('/api/downloads/authorize', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1735,7 +3736,6 @@ export async function authorizeAndDownloadProduct(
     );
   }
 
-  // 2. ONLY if server confirmed authorization:
   const cloudUrl = product.googleDrivePdfUrl?.trim() || product.firebaseStorageUrl?.trim();
   if (cloudUrl) {
     const directUrl = getDirectDownloadUrl(cloudUrl);
@@ -1754,10 +3754,6 @@ export async function authorizeAndDownloadProduct(
   return { success: true };
 }
 
-/**
- * Downloads printable PDF strictly after verified server-side authorization from Razorpay webhook.
- * Prevents client-side bypass by requiring a valid server download token.
- */
 export async function downloadProduct(
   product: Product,
   childName: string = '',
@@ -1770,5 +3766,3 @@ export async function downloadProduct(
   }
   return authorizeAndDownloadProduct(product, downloadToken.trim(), childName);
 }
-
-

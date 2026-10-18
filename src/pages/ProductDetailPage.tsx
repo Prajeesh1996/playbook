@@ -19,7 +19,9 @@ import {
   Clock,
   Heart,
   Share2,
+  Download,
 } from 'lucide-react';
+import { generateProductPDF } from '../utils/pdfGenerator';
 
 interface ProductDetailPageProps {
   slug: string;
@@ -321,6 +323,14 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             >
               <ShoppingBag className="w-4 h-4" />
               <span>Add to Cart &amp; Explore More Worksheets</span>
+            </button>
+
+            <button
+              onClick={() => generateProductPDF(product, 'Little Artist')}
+              className="w-full py-3 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-extrabold text-xs flex items-center justify-center gap-2 border border-amber-300 cursor-pointer transition-colors shadow-2xs"
+            >
+              <Download className="w-4 h-4 text-amber-700" />
+              <span>Download Complete PDF ({product.pageCount} Pages • {product.category})</span>
             </button>
           </div>
 
