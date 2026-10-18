@@ -24,6 +24,7 @@ import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { LegalPage } from './pages/LegalPage';
 import { MyDownloadsPage } from './pages/MyDownloadsPage';
+import { CheckoutPage } from './pages/CheckoutPage';
 
 import { AppProvider, useApp } from './context/AppContext';
 import { CartProvider, useCart } from './context/CartContext';
@@ -114,13 +115,11 @@ const MainApp: React.FC = () => {
   };
 
   const handleBuyNow = (product: Product) => {
-    setCheckoutProduct(product);
-    setIsCheckoutOpen(true);
+    navigate(`/checkout/${product.slug}`);
   };
 
   const handleProceedFromCart = () => {
-    setCheckoutProduct(null);
-    setIsCheckoutOpen(true);
+    navigate('/checkout');
   };
 
   const handlePaymentSuccess = (order: Order) => {
@@ -201,6 +200,11 @@ const MainApp: React.FC = () => {
             onAddToCart={handleAddToCart}
             onBuyNow={handleBuyNow}
           />
+        )}
+
+        {/* /checkout/:slug or /checkout - Dedicated Unique Checkout Page */}
+        {route.type === 'checkout' && (
+          <CheckoutPage slug={route.params.slug} />
         )}
 
         {/* /category/:slug - Dedicated Category Page */}

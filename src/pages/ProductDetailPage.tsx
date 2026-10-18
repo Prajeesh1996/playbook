@@ -21,7 +21,6 @@ import {
   Share2,
   Download,
 } from 'lucide-react';
-import { generateProductPDF } from '../utils/pdfGenerator';
 
 interface ProductDetailPageProps {
   slug: string;
@@ -310,11 +309,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           {/* Action Buttons */}
           <div className="space-y-3">
             <button
-              onClick={() => onBuyNow(product)}
+              onClick={() => navigate(`/checkout/${product.slug}`)}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#FFD93D] to-[#ffc93d] hover:brightness-105 text-neutral-900 font-heading font-extrabold text-base flex items-center justify-center gap-2.5 shadow-md shadow-amber-300/40 cursor-pointer transition-all"
             >
               <Zap className="w-5 h-5 fill-neutral-900" />
-              <span>Buy Now for ₹{product.discountedPrice} (Instant Download)</span>
+              <span>Buy Now for ₹{product.discountedPrice} (Secure Checkout)</span>
             </button>
 
             <button
@@ -322,16 +321,13 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               className="w-full py-3.5 rounded-2xl bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center justify-center gap-2 border-2 border-neutral-300 shadow-xs cursor-pointer transition-colors"
             >
               <ShoppingBag className="w-4 h-4" />
-              <span>Add to Cart &amp; Explore More Worksheets</span>
+              <span>Add to Backpack &amp; Explore More</span>
             </button>
 
-            <button
-              onClick={() => generateProductPDF(product, 'Little Artist')}
-              className="w-full py-3 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-900 font-extrabold text-xs flex items-center justify-center gap-2 border border-amber-300 cursor-pointer transition-colors shadow-2xs"
-            >
-              <Download className="w-4 h-4 text-amber-700" />
-              <span>Download Complete PDF ({product.pageCount} Pages • {product.category})</span>
-            </button>
+            <div className="p-3 bg-emerald-50/80 rounded-2xl border border-emerald-200/80 flex items-center justify-center gap-2 text-xs font-bold text-emerald-800">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Printable PDF unlocked immediately after Razorpay payment verification</span>
+            </div>
           </div>
 
           {copiedLink && (

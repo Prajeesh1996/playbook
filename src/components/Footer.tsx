@@ -129,14 +129,6 @@ export const Footer: React.FC<FooterProps> = ({
                   <span>support@littlecolourworld.com</span>
                 </a>
               </li>
-              <li>
-                <button
-                  onClick={() => navigate('/admin')}
-                  className="hover:text-amber-400 transition-colors text-left text-neutral-500 cursor-pointer"
-                >
-                  Admin Portal Login
-                </button>
-              </li>
             </ul>
           </div>
 

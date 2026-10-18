@@ -67,13 +67,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       ''
     );
   });
-  const [showKeyConfig, setShowKeyConfig] = useState(false);
-  const [keyInput, setKeyInput] = useState(razorpayKey);
-  const [keySaveSuccess, setKeySaveSuccess] = useState(false);
-  const [showSimulatorModal, setShowSimulatorModal] = useState<null | {
-    order: Order;
-    backendOrder?: any;
-  }>(null);
 
   // Check backend server Razorpay configuration
   useEffect(() => {
@@ -82,24 +75,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       .then((data) => {
         if (data.keyId && !razorpayKey) {
           setRazorpayKey(data.keyId);
-          setKeyInput(data.keyId);
         }
       })
       .catch(() => {});
   }, [razorpayKey]);
-
-  const handleSaveKey = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanKey = keyInput.trim();
-    setRazorpayKey(cleanKey);
-    if (cleanKey) {
-      localStorage.setItem('lcw_razorpay_key_id', cleanKey);
-    } else {
-      localStorage.removeItem('lcw_razorpay_key_id');
-    }
-    setKeySaveSuccess(true);
-    setTimeout(() => setKeySaveSuccess(false), 2500);
-  };
 
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -133,7 +112,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   ) => {
     setIsVerifying(true);
     setErrorMsg(null);
-    setShowSimulatorModal(null);
 
     setVerificationProgress({
       order: localOrder,
@@ -287,7 +265,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
       setIsProcessing(false);
       setIsVerifying(false);
-      setShowSimulatorModal(null);
 
       // 3. ONLY now share the PDF by calling onSuccess with the confirmed order
       onSuccess(confirmedOrder);
@@ -385,12 +362,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       const scriptLoaded = await loadRazorpayScript();
       const effectiveKey =
         razorpayKey.trim() ||
-        (backendOrder?.razorpayKeyId && !backendOrder.razorpayKeyId.includes('demo')
-          ? backendOrder.razorpayKeyId
-          : '');
+        backendOrder?.razorpayKeyId ||
+        'rzp_test_1DP5mmOlF5G5ag';
 
-      // If we have an active Razorpay key and the official script loaded
-      if (scriptLoaded && effectiveKey && (window as any).Razorpay) {
+      // Open official Razorpay Checkout Gateway
+      if (scriptLoaded && (window as any).Razorpay) {
         const options: any = {
           key: effectiveKey,
           amount: Math.round(orderTotal * 100), // in paise
@@ -456,12 +432,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         });
         rzp.open();
       } else {
-        // If Razorpay Key is not set yet or running in sandbox simulation
-        // Present explicit payment simulator modal so user must explicitly confirm or cancel
-        setShowSimulatorModal({
-          order: newOrder,
-          backendOrder,
-        });
+        setIsProcessing(false);
+        setErrorMsg('Could not load Razorpay payment gateway. Please check your internet connection and try again.');
       }
     } catch (err: any) {
       console.error(err);
@@ -677,55 +649,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </div>
           </div>
 
-          {/* Razorpay Gateway Status / Config Toggle */}
-          <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-neutral-800 font-extrabold">
-                  Razorpay Payment Gateway:
-                </span>
-                <span className="text-emerald-700 font-bold">
-                  {razorpayKey ? `Connected (${razorpayKey.substring(0, 8)}...)` : 'Standard Gateway'}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowKeyConfig(!showKeyConfig)}
-                className="text-[11px] font-extrabold text-amber-800 hover:text-amber-900 underline cursor-pointer"
-              >
-                {showKeyConfig ? 'Hide Settings' : 'Configure Key'}
-              </button>
+          {/* Razorpay Gateway Trust Badge */}
+          <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200/80 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="font-extrabold text-neutral-900">
+                Official Razorpay Payment Gateway (UPI, Cards, NetBanking)
+              </span>
             </div>
-
-            {showKeyConfig && (
-              <div className="pt-2 border-t border-neutral-200 space-y-2 text-xs">
-                <p className="text-neutral-600 font-medium">
-                  Enter your Razorpay Key ID (starts with <code className="bg-neutral-200 px-1 rounded">rzp_test_</code> or <code className="bg-neutral-200 px-1 rounded">rzp_live_</code>) from your Razorpay Dashboard:
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="rzp_test_xxxxxxxxxxxxxxxx"
-                    value={keyInput}
-                    onChange={(e) => setKeyInput(e.target.value)}
-                    className="flex-1 px-3 py-1.5 rounded-xl border border-neutral-300 text-xs font-mono font-bold bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSaveKey}
-                    className="px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold text-xs cursor-pointer"
-                  >
-                    Save Key
-                  </button>
-                </div>
-                {keySaveSuccess && (
-                  <p className="text-emerald-700 font-bold text-[11px] flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Razorpay Key updated!
-                  </p>
-                )}
-              </div>
-            )}
+            <span className="text-[10px] font-black text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+              256-Bit SSL
+            </span>
           </div>
 
           {/* Contact Details */}
@@ -891,123 +825,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </p>
           </div>
         </form>
-        )}
-
-        {/* Razorpay Confirmation / Simulator Modal (Used when testing without live API keys) */}
-        {showSimulatorModal && (
-          <div className="absolute inset-0 bg-neutral-900/80 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-            <div className="bg-white rounded-3xl p-6 max-w-md w-full border-4 border-amber-400 shadow-2xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-neutral-200">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
-                    <ShieldCheck className="w-5 h-5 text-amber-700" />
-                  </div>
-                  <div>
-                    <h4 className="font-heading font-extrabold text-sm text-neutral-900">
-                      Razorpay Gateway Confirmation
-                    </h4>
-                    <p className="text-[10px] text-neutral-500 font-bold">
-                      Order #{showSimulatorModal.order.orderNumber} • ₹{orderTotal}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setShowSimulatorModal(null);
-                    setIsProcessing(false);
-                    setErrorMsg('⚠️ Payment cancelled: Modal closed without payment confirmation. PDFs remain locked.');
-                  }}
-                  className="p-1.5 rounded-full hover:bg-neutral-100 text-neutral-400"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="text-xs text-neutral-700 space-y-2">
-                <p>
-                  You are completing payment of <strong>₹{orderTotal}</strong> for{' '}
-                  <strong>{itemsToBuy.length} printable book(s)</strong>.
-                </p>
-                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500">Customer:</span>
-                    <span className="font-extrabold text-neutral-900">{parentName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500">Email:</span>
-                    <span className="font-extrabold text-neutral-900">{email}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500">Status:</span>
-                    <span className="font-extrabold text-amber-700">Awaiting Payment Confirmation</span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-neutral-500 font-medium">
-                  PDF downloads are strictly protected. They will only be unlocked if payment is successfully confirmed.
-                </p>
-              </div>
-
-              <div className="pt-2 space-y-2">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const simPaymentId = `pay_sim_${Date.now()}`;
-                    const targetOrder = showSimulatorModal.order;
-                    const targetRzpOrderId = showSimulatorModal.order.razorpayOrderId;
-                    setShowSimulatorModal(null);
-                    setIsVerifying(true);
-                    setErrorMsg(null);
-                    try {
-                      // Dispatch real server-side webhook simulation
-                      const simRes = await fetch('/api/razorpay/webhook/simulate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          orderId: targetOrder.id,
-                          razorpayPaymentId: simPaymentId,
-                        }),
-                      });
-
-                      const simData = await simRes.json();
-                      if (!simRes.ok || !simData.success || !simData.order?.webhookVerified || !simData.order?.downloadToken) {
-                        throw new Error(simData.error || 'Server webhook simulation rejected. Access denied.');
-                      }
-
-                      // Complete verification step with server-verified order data
-                      await completePaymentVerification(
-                        targetOrder,
-                        targetRzpOrderId,
-                        simPaymentId,
-                        undefined,
-                        simData.order.downloadToken
-                      );
-                    } catch (simErr: any) {
-                      setIsProcessing(false);
-                      setIsVerifying(false);
-                      setErrorMsg(simErr.message || 'Server webhook verification failed.');
-                    }
-                  }}
-                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Confirm via Server Webhook &amp; Unlock PDFs</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowSimulatorModal(null);
-                    setIsProcessing(false);
-                    setErrorMsg('❌ Payment was declined or cancelled. PDFs are strictly not shared without verified payment confirmation.');
-                  }}
-                  className="w-full py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <AlertCircle className="w-4 h-4" />
-                  <span>Cancel / Decline Payment (Keep PDFs Locked)</span>
-                </button>
-              </div>
-            </div>
-          </div>
         )}
       </div>
     </div>

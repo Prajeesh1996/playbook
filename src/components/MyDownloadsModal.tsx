@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Product, Order } from '../types';
 import { X, Download, Mail, Search, CheckCircle2, AlertCircle, ShieldCheck, Lock } from 'lucide-react';
-import { generateProductPDF, downloadProduct } from '../utils/pdfGenerator';
+import { downloadProduct } from '../utils/pdfGenerator';
 import { PreviewArtworkPicker } from '../utils/illustrations';
 
 interface MyDownloadsModalProps {

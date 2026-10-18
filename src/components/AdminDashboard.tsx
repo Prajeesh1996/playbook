@@ -171,7 +171,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
             <form onSubmit={handleLogin} className="space-y-3 pt-2">
               <input
                 type="password"
-                placeholder="Enter PIN (e.g. 1234)"
+                placeholder="Enter Security PIN"
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
                 autoFocus
@@ -179,7 +179,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               />
 
               {pinError && (
-                <p className="text-xs font-bold text-red-600">Incorrect PIN! (Default: 1234 or admin)</p>
+                <p className="text-xs font-bold text-red-600">Incorrect PIN! Access denied.</p>
               )}
 
               <button

@@ -5,6 +5,8 @@ export type RouteType =
   | 'books'
   | 'product'
   | 'category'
+  | 'checkout'
+  | 'order-success'
   | 'schools'
   | 'about'
   | 'contact'
@@ -38,7 +40,15 @@ function parsePath(pathname: string, search: string): RouteState {
   // Clean trailing slashes
   const cleanPath = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
 
-  // Support query parameter fallback (e.g. /?book=slug, /?category=slug, /?page=about)
+  // Support query parameter fallback (e.g. /?book=slug, /?category=slug, /?checkout=slug, /?page=about)
+  if (queryParams.checkout) {
+    return {
+      type: 'checkout',
+      path: `/checkout/${queryParams.checkout}`,
+      params: { slug: queryParams.checkout },
+      query: queryParams,
+    };
+  }
   if (queryParams.book) {
     return {
       type: 'product',
@@ -57,7 +67,7 @@ function parsePath(pathname: string, search: string): RouteState {
   }
   if (queryParams.page) {
     const page = queryParams.page;
-    if (page === 'schools' || page === 'about' || page === 'contact' || page === 'my-downloads' || page === 'admin' || page === 'books') {
+    if (page === 'schools' || page === 'about' || page === 'contact' || page === 'my-downloads' || page === 'admin' || page === 'books' || page === 'checkout') {
       return {
         type: page as RouteType,
         path: `/${page}`,
@@ -74,6 +84,24 @@ function parsePath(pathname: string, search: string): RouteState {
 
   if (cleanPath === '/books') {
     return { type: 'books', path: '/books', params: {}, query: queryParams };
+  }
+
+  // /checkout/:slug or /checkout
+  const checkoutMatch = cleanPath.match(/^\/checkout\/([a-zA-Z0-9_-]+)$/);
+  if (checkoutMatch) {
+    return {
+      type: 'checkout',
+      path: cleanPath,
+      params: { slug: checkoutMatch[1] },
+      query: queryParams,
+    };
+  }
+  if (cleanPath === '/checkout') {
+    return { type: 'checkout', path: '/checkout', params: {}, query: queryParams };
+  }
+
+  if (cleanPath === '/order-success') {
+    return { type: 'order-success', path: '/order-success', params: {}, query: queryParams };
   }
 
   // /book/:slug

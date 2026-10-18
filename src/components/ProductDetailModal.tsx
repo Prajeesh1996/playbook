@@ -11,9 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Download,
 } from 'lucide-react';
-import { generateProductPDF } from '../utils/pdfGenerator';
 import { PreviewArtworkPicker } from '../utils/illustrations';
 
 interface ProductDetailModalProps {
@@ -261,13 +259,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </div>
 
                 <button
-                  onClick={() => generateProductPDF(product, 'Little Artist')}
+                  onClick={() => {
+                    onClose();
+                    onSelectRelated(product);
+                  }}
                   className="w-full py-2.5 px-4 rounded-2xl bg-white hover:bg-amber-50/60 text-neutral-800 font-extrabold text-xs flex items-center justify-center gap-2 border border-amber-200 transition-colors cursor-pointer shadow-2xs"
-                  title="Generate and download the complete PDF workbook"
                 >
-                  <Download className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Download Full PDF ({product.pageCount} Pages • {product.category})</span>
+                  <FileText className="w-3.5 h-3.5 text-amber-600" />
+                  <span>View Full Details &amp; Sample Pages ({product.pageCount} Pages)</span>
                 </button>
+
+                <div className="p-2.5 bg-emerald-50/80 rounded-xl border border-emerald-200/80 flex items-center justify-center gap-2 text-[11px] font-bold text-emerald-800">
+                  <span>🔒 PDF downloads strictly unlocked after verified Razorpay payment</span>
+                </div>
               </div>
             </div>
           </div>

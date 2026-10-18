@@ -172,18 +172,6 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </button>
 
-              {/* Admin Portal Button */}
-              <button
-                onClick={() => {
-                  navigate('/admin');
-                  if (onOpenAdmin) onOpenAdmin();
-                }}
-                className="p-2 rounded-full text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors cursor-pointer"
-                title="Admin Dashboard"
-                aria-label="Admin Dashboard"
-              >
-                <Shield className="w-4 h-4" />
-              </button>
 
               {/* Mobile Hamburger Menu Toggle */}
               <button
@@ -228,16 +216,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>My Downloads (Recover Purchases)</span>
               </button>
 
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate('/admin');
-                }}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-neutral-100 text-neutral-700 font-semibold text-xs cursor-pointer"
-              >
-                <Shield className="w-4 h-4" />
-                <span>Admin Portal</span>
-              </button>
             </div>
           </div>
         )}
