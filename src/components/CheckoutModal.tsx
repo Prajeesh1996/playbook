@@ -267,6 +267,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         console.warn('Confetti error', err);
       }
 
+      // Meta Pixel Purchase Event
+      try {
+        if (typeof (window as any).fbq === 'function') {
+          (window as any).fbq('track', 'Purchase', {
+            value: confirmedOrder.total,
+            currency: 'INR',
+            content_type: 'product',
+            content_name: confirmedOrder.items.map((i) => i.title).join(', '),
+          });
+        }
+      } catch (e) {
+        console.warn('Meta Pixel tracking error', e);
+      }
+
       if (!directProduct) {
         clearCart();
       }
@@ -310,6 +324,19 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     setIsProcessing(true);
     setErrorMsg(null);
+
+    // Meta Pixel InitiateCheckout Event
+    try {
+      if (typeof (window as any).fbq === 'function') {
+        (window as any).fbq('track', 'InitiateCheckout', {
+          value: orderTotal,
+          currency: 'INR',
+          num_items: itemsToBuy.length,
+        });
+      }
+    } catch (e) {
+      console.warn('Meta Pixel tracking error', e);
+    }
 
     try {
       // Step 1: Create a pending order on the server
