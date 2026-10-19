@@ -1,4 +1,5 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import type { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
@@ -11,7 +12,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '3000', 10);
+
+// Catch unexpected exceptions so the server process remains resilient
+process.on('uncaughtException', (err) => {
+  console.error('[Server Error] Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Server Error] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Resolve port safely: prioritize --port argument, then env PORT (avoiding 8080 used by Nginx proxy), default 3000
+function resolvePort(): number {
+  const args = process.argv.slice(2);
+  const portArgIndex = args.indexOf('--port');
+  if (portArgIndex !== -1 && args[portArgIndex + 1]) {
+    return parseInt(args[portArgIndex + 1], 10);
+  }
+  const envPort = parseInt(process.env.PORT || '', 10);
+  if (envPort && envPort !== 8080) {
+    return envPort;
+  }
+  return 3000;
+}
+const PORT = resolvePort();
 
 app.use(
   express.json({
@@ -703,6 +726,13 @@ app.post('/api/school-enquiry', (req: Request, res: Response) => {
   };
   dbEnquiries.push(enquiry);
   res.json({ success: true, message: 'Enquiry submitted successfully.' });
+});
+
+// Express global error handling middleware
+app.use((err: any, _req: Request, res: Response, _next: any) => {
+  console.error('[Server Request Error]:', err);
+  if (res.headersSent) return;
+  res.status(500).json({ error: 'Internal server error', message: err?.message || 'Unexpected server error' });
 });
 
 // Mount Vite middleware in dev or serve static dist in production

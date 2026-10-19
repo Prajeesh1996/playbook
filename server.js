@@ -11,7 +11,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '3000', 10);
+// Catch unexpected exceptions so the server process remains resilient
+process.on('uncaughtException', (err) => {
+  console.error('[Server Error] Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Server Error] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Resolve port safely: prioritize --port argument, then env PORT (avoiding 8080 used by Nginx proxy), default 3000
+function resolvePort() {
+  const args = process.argv.slice(2);
+  const portArgIndex = args.indexOf('--port');
+  if (portArgIndex !== -1 && args[portArgIndex + 1]) {
+    return parseInt(args[portArgIndex + 1], 10);
+  }
+  const envPort = parseInt(process.env.PORT || '', 10);
+  if (envPort && envPort !== 8080) {
+    return envPort;
+  }
+  return 3000;
+}
+const PORT = resolvePort();
 const distPath = path.join(__dirname, 'dist');
 
 app.use(
@@ -425,10 +446,6 @@ app.post(['/api/orders/verify', '/api/orders/verify-webhook'], async (req, res) 
       expiresAt: order.tokenExpiresAt,
       items: order.items,
     });
-  } catch (err) {
-    res.status(500).json({ error: 'Server payment verification error.' });
-  }
-});
   } catch (err) {
     res.status(500).json({ error: 'Server payment verification error.' });
   }
