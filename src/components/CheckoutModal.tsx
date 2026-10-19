@@ -136,8 +136,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     });
 
     try {
-      // STRICT VALIDATION: Require valid Razorpay payment ID (must start with 'pay_')
-      if (!razorpayPaymentId || (!razorpayPaymentId.startsWith('pay_') && !razorpayPaymentId.startsWith('pay_sim_'))) {
+      // STRICT VALIDATION: Require authentic Razorpay payment ID
+      if (!razorpayPaymentId || !razorpayPaymentId.startsWith('pay_')) {
         throw new Error('Payment confirmation failed. No authentic payment ID received from Razorpay.');
       }
 
@@ -387,82 +387,80 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       const hasValidKey = isAuthenticRazorpayKey(effectiveKey);
       const isLiveGateway = Boolean(backendOrder?.isLiveGateway);
 
-      // Open official Razorpay Checkout Gateway ONLY if authentic key is present and live order created
-      if (scriptLoaded && (window as any).Razorpay && hasValidKey && isLiveGateway) {
-        try {
-          const options: any = {
-            key: effectiveKey,
-            amount: Math.round(orderTotal * 100), // in paise
-            currency: 'INR',
-            name: 'Little Colour World',
-            description: `Order #${newOrder.orderNumber} – ${itemsToBuy.length} Printable PDF Workbook(s)`,
-            image: 'https://cdn-icons-png.flaticon.com/512/3661/3661337.png',
-            order_id: backendOrder?.razorpayOrderId,
-            prefill: {
-              name: parentName.trim(),
-              email: email.trim().toLowerCase(),
-              contact: phone.trim(),
-            },
-            notes: {
-              orderId: newOrder.id,
-              orderNumber: newOrder.orderNumber,
-              customerEmail: email.trim().toLowerCase(),
-            },
-            theme: {
-              color: '#0C2340',
-            },
-            modal: {
-              ondismiss: () => {
-                setIsProcessing(false);
-                setErrorMsg(
-                  '⚠️ Payment was cancelled or window closed. You can complete verification directly below.'
-                );
-              },
-            },
-            handler: async (response: {
-              razorpay_payment_id: string;
-              razorpay_order_id?: string;
-              razorpay_signature?: string;
-            }) => {
-              if (!response.razorpay_payment_id) {
-                setIsProcessing(false);
-                setErrorMsg('No Razorpay payment ID received. Cannot verify payment.');
-                return;
-              }
-              // ONLY after successful Razorpay response:
-              await completePaymentVerification(
-                newOrder,
-                response.razorpay_order_id || newOrder.razorpayOrderId,
-                response.razorpay_payment_id,
-                response.razorpay_signature
-              );
-            },
-          };
-
-          const rzp = new (window as any).Razorpay(options);
-          rzp.on('payment.failed', (resp: any) => {
-            console.warn('Razorpay SDK payment.failed, falling back to server verification:', resp);
-            // In case of test decline or modal error, offer server verify
-            completePaymentVerification(
-              newOrder,
-              newOrder.razorpayOrderId,
-              `pay_rzp_${Date.now()}`
-            );
-          });
-          rzp.open();
-          return;
-        } catch (openErr) {
-          console.warn('Error launching Razorpay in modal, using server verification', openErr);
-        }
+      if (!backendOrder?.razorpayOrderId) {
+        setIsProcessing(false);
+        setErrorMsg('Unable to initialize Razorpay order. Please try again.');
+        return;
       }
 
-      // If no live key configured yet in test environment, authorize via server verify
-      const simulatedPaymentId = `pay_rzp_${Date.now()}`;
-      await completePaymentVerification(
-        newOrder,
-        newOrder.razorpayOrderId,
-        simulatedPaymentId
-      );
+      if (!scriptLoaded || !(window as any).Razorpay) {
+        setIsProcessing(false);
+        setErrorMsg('Razorpay payment gateway is loading. Please check your connection and retry.');
+        return;
+      }
+
+      try {
+        const options: any = {
+          key: effectiveKey || 'rzp_live_TfArYZA9ZUkvfu',
+          amount: Math.round(orderTotal * 100), // in paise
+          currency: 'INR',
+          name: 'Little Colour World',
+          description: `Order #${newOrder.orderNumber} – ${itemsToBuy.length} Printable PDF Workbook(s)`,
+          image: 'https://cdn-icons-png.flaticon.com/512/3661/3661337.png',
+          order_id: backendOrder.razorpayOrderId,
+          prefill: {
+            name: parentName.trim(),
+            email: email.trim().toLowerCase(),
+            contact: phone.trim(),
+          },
+          notes: {
+            orderId: newOrder.id,
+            orderNumber: newOrder.orderNumber,
+            customerEmail: email.trim().toLowerCase(),
+          },
+          theme: {
+            color: '#0C2340',
+          },
+          modal: {
+            ondismiss: () => {
+              setIsProcessing(false);
+              setErrorMsg(
+                '⚠️ Payment window was closed. Your printable PDF workbooks remain locked until payment is verified.'
+              );
+            },
+          },
+          handler: async (response: {
+            razorpay_payment_id: string;
+            razorpay_order_id?: string;
+            razorpay_signature?: string;
+          }) => {
+            if (!response.razorpay_payment_id) {
+              setIsProcessing(false);
+              setErrorMsg('No Razorpay payment ID received. Cannot verify payment.');
+              return;
+            }
+            // Strict server verification
+            await completePaymentVerification(
+              newOrder,
+              response.razorpay_order_id || newOrder.razorpayOrderId,
+              response.razorpay_payment_id,
+              response.razorpay_signature
+            );
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', (resp: any) => {
+          setIsProcessing(false);
+          setErrorMsg(
+            `❌ Payment failed: ${resp.error?.description || 'Transaction declined'}. PDF downloads remain locked.`
+          );
+        });
+        rzp.open();
+      } catch (openErr: any) {
+        setIsProcessing(false);
+        setErrorMsg(openErr?.message || 'Error launching Razorpay checkout.');
+      }
     } catch (err: any) {
       console.error(err);
       setIsProcessing(false);
@@ -760,7 +758,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 }`}
               >
                 <Smartphone className="w-5 h-5 text-emerald-600" />
-                <span className="text-xs font-extrabold text-neutral-900">UPI / QR</span>
+                <span className="text-xs font-extrabold text-neutral-900">UPI</span>
                 <span className="text-[10px] text-neutral-400 font-bold">GPay, PhonePe, Paytm</span>
               </button>
 
@@ -797,7 +795,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div className="bg-white p-3.5 rounded-2xl border border-neutral-200 flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Enter UPI ID (optional, or pay via QR on Razorpay popup)"
+                  placeholder="Enter UPI ID (optional, or select UPI in Razorpay popup)"
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
                   className="flex-1 text-xs font-bold px-2 py-1 focus:outline-none"
