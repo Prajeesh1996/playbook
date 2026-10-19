@@ -35,10 +35,10 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ') as ProductCategory);
 
-  const categoryProducts = products.filter(
+  const categoryProducts = (products || []).filter(
     (p) =>
-      p.category.toLowerCase().replace(/[^a-z0-9]/g, '-') === categorySlug ||
-      p.category === categoryName
+      (p?.category || '').toLowerCase().replace(/[^a-z0-9]/g, '-') === categorySlug ||
+      p?.category === categoryName
   );
 
   // Dynamic SEO Injection for Category

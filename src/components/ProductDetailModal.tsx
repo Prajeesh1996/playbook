@@ -42,9 +42,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     .filter((p) => p.id !== product.id && (p.category === product.category || p.ageGroup === product.ageGroup))
     .slice(0, 3);
 
+  const originalPrice = product.originalPrice || 0;
+  const discountedPrice = product.discountedPrice || 0;
   const discountPercent =
-    product.originalPrice > product.discountedPrice
-      ? Math.round(((product.originalPrice - product.discountedPrice) / product.originalPrice) * 100)
+    originalPrice > discountedPrice
+      ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
       : 0;
 
   return (

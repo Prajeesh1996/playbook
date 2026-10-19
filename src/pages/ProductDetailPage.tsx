@@ -50,9 +50,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       return;
     }
 
-    const pageTitle = `${product.title} (PDF Printable) – ${product.ageGroup} | Little Colour World`;
-    const pageDesc = `${product.shortDescription || product.description.slice(0, 150)}. Instant printable A4 PDF workbook for ${product.ageGroup}. Starting at ₹${product.discountedPrice}.`;
-    const canonicalPath = `/book/${product.slug}`;
+    const pageTitle = `${product.title} (PDF Printable) – ${product.ageGroup || 'Ages 2–6'} | Little Colour World`;
+    const pageDesc = `${product.shortDescription || (product.description || '').slice(0, 150)}. Instant printable A4 PDF workbook. Starting at ₹${product.discountedPrice || 49}.`;
+    const canonicalPath = `/book/${product.slug || product.id}`;
 
     const jsonLd = {
       '@context': 'https://schema.org',

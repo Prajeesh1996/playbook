@@ -25,8 +25,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   const [ageFilter, setAgeFilter] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'pages-desc'>('featured');
 
-  // Filter products
-  const filtered = products.filter((p) => {
+  // Filter products defensively
+  const filtered = (products || []).filter((p) => {
+    if (!p) return false;
+
     // Category match
     if (selectedCategory !== 'All' && p.category !== selectedCategory) {
       return false;
@@ -34,28 +36,34 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
 
     // Age filter
     if (ageFilter !== 'All') {
-      if (ageFilter === 'Ages 2–3' && !p.ageGroup.includes('2') && !p.ageGroup.includes('3')) return false;
-      if (ageFilter === 'Ages 3–5' && !p.ageGroup.includes('3') && !p.ageGroup.includes('4') && !p.ageGroup.includes('5')) return false;
-      if (ageFilter === 'Bundles' && !p.title.toLowerCase().includes('bundle')) return false;
+      const age = p.ageGroup || '';
+      if (ageFilter === 'Ages 2–3' && !age.includes('2') && !age.includes('3')) return false;
+      if (ageFilter === 'Ages 3–5' && !age.includes('3') && !age.includes('4') && !age.includes('5')) return false;
+      if (ageFilter === 'Bundles' && !(p.title || '').toLowerCase().includes('bundle')) return false;
     }
 
     // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const matchTitle = p.title.toLowerCase().includes(q);
-      const matchCat = p.category.toLowerCase().includes(q);
-      const matchDesc = p.description.toLowerCase().includes(q);
+      const matchTitle = (p.title || '').toLowerCase().includes(q);
+      const matchCat = (p.category || '').toLowerCase().includes(q);
+      const matchDesc = (p.description || '').toLowerCase().includes(q);
       if (!matchTitle && !matchCat && !matchDesc) return false;
     }
 
     return true;
   });
 
-  // Sort
+  // Sort defensively
   const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === 'price-asc') return a.discountedPrice - b.discountedPrice;
-    if (sortBy === 'price-desc') return b.discountedPrice - a.discountedPrice;
-    if (sortBy === 'pages-desc') return b.pageCount - a.pageCount;
+    const aPrice = a.discountedPrice || 0;
+    const bPrice = b.discountedPrice || 0;
+    const aPages = a.pageCount || 0;
+    const bPages = b.pageCount || 0;
+
+    if (sortBy === 'price-asc') return aPrice - bPrice;
+    if (sortBy === 'price-desc') return bPrice - aPrice;
+    if (sortBy === 'pages-desc') return bPages - aPages;
     return (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0);
   });
 

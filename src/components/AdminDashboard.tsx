@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Product, ProductCategory, AgeGroup, Coupon } from '../types';
 import { generateProductPDF } from '../utils/pdfGenerator';
@@ -60,9 +60,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   const [adminRzpKey, setAdminRzpKey] = useState<string>(() => {
     return localStorage.getItem('lcw_razorpay_key_id') || (import.meta.env.VITE_RAZORPAY_KEY_ID as string) || '';
   });
+  const [adminRzpSecret, setAdminRzpSecret] = useState<string>('');
+  const [serverHasSecret, setServerHasSecret] = useState(false);
   const [rzpSaveMsg, setRzpSaveMsg] = useState(false);
   const [isTestingWebhook, setIsTestingWebhook] = useState(false);
   const [webhookTestStatus, setWebhookTestStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/razorpay/config')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.keyId && !adminRzpKey) {
+          setAdminRzpKey(data.keyId);
+        }
+        if (data.hasSecret) {
+          setServerHasSecret(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleTestWebhook = async () => {
     setIsTestingWebhook(true);
@@ -796,40 +812,83 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="block text-xs font-extrabold text-neutral-800">
-                    Razorpay Key ID (Client &amp; Server):
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. rzp_test_xxxxxxxxxxxxxxxx or rzp_live_xxxxxxxxxxxxxxxx"
-                      value={adminRzpKey}
-                      onChange={(e) => setAdminRzpKey(e.target.value)}
-                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-neutral-300 font-mono text-xs font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                    />
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-extrabold text-neutral-800 mb-1">
+                        Razorpay Key ID (Public Client Key):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="rzp_test_... or rzp_live_..."
+                        value={adminRzpKey}
+                        onChange={(e) => setAdminRzpKey(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 font-mono text-xs font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-neutral-50"
+                      />
+                      <span className="text-[10px] text-neutral-400 font-bold mt-1 block">
+                        Starts with rzp_test_ (Sandbox) or rzp_live_ (Production)
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-extrabold text-neutral-800 mb-1">
+                        Razorpay Key Secret (Server-Side Signature):
+                      </label>
+                      <input
+                        type="password"
+                        placeholder={serverHasSecret ? '•••••••••••••••• (Secret Configured)' : 'Enter Razorpay Key Secret'}
+                        value={adminRzpSecret}
+                        onChange={(e) => setAdminRzpSecret(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 font-mono text-xs font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-neutral-50"
+                      />
+                      <span className="text-[10px] text-neutral-400 font-bold mt-1 block">
+                        Used for HMAC SHA256 cryptographic verification of payments.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-1">
                     <button
-                      onClick={() => {
-                        const clean = adminRzpKey.trim();
-                        if (clean) {
-                          localStorage.setItem('lcw_razorpay_key_id', clean);
+                      onClick={async () => {
+                        const cleanKey = adminRzpKey.trim();
+                        const cleanSecret = adminRzpSecret.trim();
+
+                        if (cleanKey) {
+                          localStorage.setItem('lcw_razorpay_key_id', cleanKey);
                         } else {
                           localStorage.removeItem('lcw_razorpay_key_id');
                         }
-                        setRzpSaveMsg(true);
-                        setTimeout(() => setRzpSaveMsg(false), 2500);
-                      }}
-                      className="px-5 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold text-xs cursor-pointer shadow-xs"
-                    >
-                      Save Key
-                    </button>
-                  </div>
 
-                  {rzpSaveMsg && (
-                    <p className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4" /> Razorpay Key ID saved successfully!
-                    </p>
-                  )}
+                        // Sync to backend server
+                        try {
+                          await fetch('/api/razorpay/config', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              keyId: cleanKey,
+                              keySecret: cleanSecret || undefined,
+                            }),
+                          });
+                          if (cleanSecret) setServerHasSecret(true);
+                          setAdminRzpSecret('');
+                        } catch (e) {
+                          console.warn('Could not sync to server', e);
+                        }
+
+                        setRzpSaveMsg(true);
+                        setTimeout(() => setRzpSaveMsg(false), 3000);
+                      }}
+                      className="px-6 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold text-xs cursor-pointer shadow-xs"
+                    >
+                      Save Credentials (Server &amp; Client)
+                    </button>
+
+                    {rzpSaveMsg && (
+                      <p className="text-xs font-bold text-emerald-700 flex items-center gap-1.5 animate-in fade-in">
+                        <CheckCircle2 className="w-4 h-4" /> Razorpay credentials updated &amp; synchronized with server!
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 

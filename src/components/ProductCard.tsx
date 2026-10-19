@@ -18,12 +18,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onBuyNow,
 }) => {
   const { navigate } = useRouter();
+  const originalPrice = product.originalPrice || 0;
+  const discountedPrice = product.discountedPrice || 0;
   const discountPercent =
-    product.originalPrice > product.discountedPrice
-      ? Math.round(((product.originalPrice - product.discountedPrice) / product.originalPrice) * 100)
+    originalPrice > discountedPrice
+      ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
       : 0;
 
-  const previewArtType = product.samplePages[0]?.previewSvgType || 'lion';
+  const previewArtType = product.samplePages?.[0]?.previewSvgType || 'lion';
 
   return (
     <div className="group bg-white rounded-3xl border-2 border-amber-200/70 hover:border-amber-400 p-3.5 sm:p-4 flex flex-col justify-between shadow-xs hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1">
@@ -82,7 +84,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Category */}
           <div
             onClick={() =>
-              navigate(`/category/${product.category.toLowerCase().replace(/[^a-z0-9]/g, '-')}`)
+              navigate(`/category/${(product.category || 'all').toLowerCase().replace(/[^a-z0-9]/g, '-')}`)
             }
             className="text-[11px] font-bold text-amber-700 uppercase tracking-wider truncate cursor-pointer hover:underline"
           >
@@ -91,7 +93,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* Title */}
           <h4
-            onClick={() => navigate(`/book/${product.slug}`)}
+            onClick={() => navigate(`/book/${product.slug || product.id}`)}
             className="font-heading font-extrabold text-sm sm:text-base text-neutral-900 group-hover:text-[#FF8A65] transition-colors line-clamp-2 leading-snug cursor-pointer"
           >
             {product.title}

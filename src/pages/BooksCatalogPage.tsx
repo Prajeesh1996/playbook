@@ -47,9 +47,9 @@ export const BooksCatalogPage: React.FC<BooksCatalogPageProps> = ({
     // Search query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const matchTitle = p.title.toLowerCase().includes(q);
-      const matchCat = p.category.toLowerCase().includes(q);
-      const matchDesc = p.description.toLowerCase().includes(q);
+      const matchTitle = (p.title || '').toLowerCase().includes(q);
+      const matchCat = (p.category || '').toLowerCase().includes(q);
+      const matchDesc = (p.description || '').toLowerCase().includes(q);
       if (!matchTitle && !matchCat && !matchDesc) return false;
     }
 
@@ -59,7 +59,7 @@ export const BooksCatalogPage: React.FC<BooksCatalogPageProps> = ({
     }
 
     // Age group filter
-    if (selectedAge !== 'All' && !p.ageGroup.includes(selectedAge)) {
+    if (selectedAge !== 'All' && !(p.ageGroup || '').includes(selectedAge)) {
       return false;
     }
 

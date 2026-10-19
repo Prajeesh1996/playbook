@@ -31,7 +31,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const stored = localStorage.getItem(CART_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(
+            (item) => item && item.product && typeof item.product.discountedPrice === 'number'
+          );
+        }
+      }
+      return [];
     } catch {
       return [];
     }
@@ -96,7 +104,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAppliedCoupon(null);
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + item.product.discountedPrice, 0);
+  const subtotal = cart.reduce(
+    (sum, item) => sum + (Number(item?.product?.discountedPrice) || 0),
+    0
+  );
 
   let discount = 0;
   if (appliedCoupon) {

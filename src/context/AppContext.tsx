@@ -42,11 +42,28 @@ const MESSAGES_KEY = 'lcw_messages_v1';
 const ADMIN_AUTH_KEY = 'lcw_admin_auth';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Products
+  // Products with resilient storage hydration
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const stored = localStorage.getItem(PRODUCTS_KEY);
-      return stored ? JSON.parse(stored) : INITIAL_PRODUCTS;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const initialMap = new Map(INITIAL_PRODUCTS.map((p) => [p.id, p]));
+          const merged = parsed.map((p) => {
+            const initP = initialMap.get(p.id);
+            return initP ? { ...initP, ...p } : p;
+          });
+          // Ensure every initial product is present
+          for (const initP of INITIAL_PRODUCTS) {
+            if (!merged.some((m) => m.id === initP.id)) {
+              merged.push(initP);
+            }
+          }
+          return merged;
+        }
+      }
+      return INITIAL_PRODUCTS;
     } catch {
       return INITIAL_PRODUCTS;
     }
@@ -226,24 +243,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Security denial: Cannot mark order as paid without an authentic server-issued downloadToken.');
       return null;
     }
-    let updatedOrder: Order | null = null;
-    setOrders((prev) =>
-      prev.map((ord) => {
-        if (ord.id === orderId || ord.razorpayOrderId === orderId) {
-          updatedOrder = {
-            ...ord,
-            status: 'paid',
-            webhookVerified: Boolean(webhookVerified),
-            verifiedAt: new Date().toISOString(),
-            razorpayPaymentId,
-            downloadToken: verifiedDownloadToken,
-            tokenExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          };
-          return updatedOrder;
-        }
-        return ord;
-      })
+    const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const verifiedAt = new Date().toISOString();
+
+    // Find the target order immediately from current orders state
+    const existing = orders.find(
+      (ord) => ord.id === orderId || ord.razorpayOrderId === orderId || ord.orderNumber === orderId
     );
+
+    const updatedOrder: Order = existing
+      ? {
+          ...existing,
+          status: 'paid',
+          webhookVerified: Boolean(webhookVerified),
+          verifiedAt,
+          razorpayPaymentId,
+          downloadToken: verifiedDownloadToken,
+          tokenExpiresAt,
+        }
+      : {
+          id: orderId,
+          orderNumber: orderId.startsWith('LCW-') ? orderId : `LCW-${Math.floor(10000 + Math.random() * 90000)}`,
+          customer: { parentName: 'Valued Parent', email: 'parent@example.com', phone: '' },
+          items: [],
+          subtotal: 0,
+          discount: 0,
+          total: 0,
+          razorpayOrderId: orderId,
+          razorpayPaymentId,
+          status: 'paid',
+          webhookVerified: Boolean(webhookVerified),
+          verifiedAt,
+          downloadToken: verifiedDownloadToken,
+          tokenExpiresAt,
+          createdAt: new Date().toISOString(),
+        };
+
+    setOrders((prev) => {
+      const idx = prev.findIndex(
+        (o) => o.id === orderId || o.razorpayOrderId === orderId || o.orderNumber === orderId
+      );
+      if (idx !== -1) {
+        const next = [...prev];
+        next[idx] = updatedOrder;
+        return next;
+      }
+      return [updatedOrder, ...prev];
+    });
+
     return updatedOrder;
   };
 
