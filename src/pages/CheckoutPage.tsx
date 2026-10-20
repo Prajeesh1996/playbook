@@ -48,7 +48,7 @@ interface CheckoutPageProps {
 }
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
-  const { products, createOrder, markOrderPaid } = useApp();
+  const { products, createOrder, markOrderPaid, getOrderById } = useApp();
   const { cart, subtotal, discount, total, appliedCoupon, applyCoupon, removeCoupon, clearCart } = useCart();
   const { navigate } = useRouter();
 
@@ -93,6 +93,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
   const [verifiedOrder, setVerifiedOrder] = useState<Order | null>(null);
   const [verifiedDownloadToken, setVerifiedDownloadToken] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [activePaymentUrl, setActivePaymentUrl] = useState<string | null>(null);
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [isAwaitingPayment, setIsAwaitingPayment] = useState(false);
 
   // Pricing calculations
   const rawSubtotal = directProduct ? directProduct.discountedPrice : subtotal;
@@ -110,6 +113,87 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
     });
   }, [directProduct]);
 
+  // Handle return redirect from Razorpay Payment Link callback
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const orderIdParam = searchParams.get('order_id') || searchParams.get('orderId');
+    if (orderIdParam) {
+      setIsVerifying(true);
+      fetch(`/api/orders/status/${orderIdParam}`)
+        .then((r) => r.json())
+        .then((data) => {
+          setIsVerifying(false);
+          if (data.isPaid && data.downloadToken) {
+            setVerifiedDownloadToken(data.downloadToken);
+            const found = getOrderById(orderIdParam) || {
+              id: orderIdParam,
+              orderNumber: data.orderNumber || orderIdParam,
+              customer: { parentName: 'Valued Parent', email: '', phone: '' },
+              items: [],
+              subtotal: 0,
+              discount: 0,
+              total: 0,
+              status: 'paid',
+              downloadToken: data.downloadToken,
+              createdAt: new Date().toISOString(),
+            };
+            setVerifiedOrder(found as any);
+            clearCart();
+            try {
+              confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.6 },
+                colors: ['#FFD93D', '#FF8A65', '#6BCBFF', '#A0E7E5', '#FFAAA6'],
+              });
+            } catch {}
+          }
+        })
+        .catch(() => setIsVerifying(false));
+    }
+  }, []);
+
+  // Live polling for payment confirmation (detects payments from popup, direct portal or mobile UPI)
+  useEffect(() => {
+    if (!isAwaitingPayment || !activeOrderId) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/orders/status/${activeOrderId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isPaid && data.downloadToken) {
+            clearInterval(interval);
+            setIsAwaitingPayment(false);
+            setIsProcessing(false);
+            setVerifiedDownloadToken(data.downloadToken);
+            setVerifiedOrder((prev) => prev || ({
+              id: activeOrderId,
+              orderNumber: data.orderNumber,
+              customer: { parentName, email, phone },
+              items: itemsToBuy.map((i) => ({ productId: i.productId, title: i.title, price: i.price })),
+              total: finalPayable,
+              status: 'paid',
+              downloadToken: data.downloadToken,
+              createdAt: new Date().toISOString(),
+            } as any));
+            clearCart();
+            try {
+              confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.6 },
+                colors: ['#FFD93D', '#FF8A65', '#6BCBFF', '#A0E7E5', '#FFAAA6'],
+              });
+            } catch {}
+          }
+        }
+      } catch {
+        // Poll retry
+      }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isAwaitingPayment, activeOrderId, parentName, email, phone, itemsToBuy, finalPayable]);
+
   // Load Razorpay script if not already present
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -123,7 +207,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
         if ((window as any).Razorpay) {
           clearInterval(interval);
           resolve(true);
-        } else if (attempts > 15) {
+        } else if (attempts > 30) {
           clearInterval(interval);
           const existing = document.querySelector('script[src*="checkout.razorpay.com"]');
           if (existing) {
@@ -316,8 +400,20 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
         return;
       }
 
+      setActiveOrderId(newOrder.id);
+      if (backendOrder.paymentLinkUrl) {
+        setActivePaymentUrl(backendOrder.paymentLinkUrl);
+      }
+      setIsAwaitingPayment(true);
+
       const scriptReady = await loadRazorpayScript();
       if (!scriptReady || !(window as any).Razorpay) {
+        // Fallback directly to official Razorpay Payment Link
+        if (backendOrder?.paymentLinkUrl) {
+          window.open(backendOrder.paymentLinkUrl, '_blank');
+          setIsProcessing(false);
+          return;
+        }
         setIsProcessing(false);
         setErrorMessage('Unable to load official Razorpay payment window. Please check your internet connection.');
         return;
@@ -397,6 +493,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
         });
         rzpInstance.open();
       } catch (sdkErr: any) {
+        console.warn('Razorpay popup open error, falling back to direct payment link:', sdkErr);
+        if (backendOrder?.paymentLinkUrl) {
+          window.open(backendOrder.paymentLinkUrl, '_blank');
+          setIsProcessing(false);
+          return;
+        }
         setIsProcessing(false);
         setErrorMessage(sdkErr?.message || 'Failed to open Razorpay payment gateway.');
       }
@@ -792,6 +894,32 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
                   </span>
                 </div>
               </div>
+
+              {/* Active Razorpay Payment Status Banner & Direct Portal Link */}
+              {isAwaitingPayment && activePaymentUrl && (
+                <div className="p-4 bg-sky-50 border-2 border-sky-300 rounded-2xl space-y-2.5 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sky-950 font-extrabold text-xs">
+                      <RefreshCw className="w-4 h-4 animate-spin text-sky-600" />
+                      <span>Razorpay Payment Active • Waiting for confirmation</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full">
+                      Auto-verifying...
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-600 font-medium">
+                    If the payment popup was blocked or closed, you can complete payment on the official Razorpay page below:
+                  </p>
+                  <a
+                    href={activePaymentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2.5 rounded-xl bg-[#0C2340] hover:bg-[#1a3a60] text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  >
+                    <span>Open Official Razorpay Payment Page (UPI / Cards / NetBanking) ↗</span>
+                  </a>
+                </div>
+              )}
 
               {/* Payment Action Button */}
               <div className="pt-2">

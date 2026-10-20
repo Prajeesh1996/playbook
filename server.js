@@ -202,6 +202,51 @@ app.post('/api/orders/create', async (req, res) => {
         console.warn('Razorpay fetch error:', apiErr);
         razorpayApiError = apiErr?.message || 'Network error reaching Razorpay API';
       }
+      // 2. Official Razorpay Payment Link (Guaranteed fallback that works in all browsers, iframes & mobile UPI apps)
+      try {
+        const hostHeader = req.get('host') || 'localhost:3000';
+        const protoHeader = req.get('x-forwarded-proto') || (req.secure ? 'https' : 'http');
+        const callbackUrl = `${protoHeader}://${hostHeader}/checkout?order_id=${orderId}`;
+
+        const plinkRes = await fetch('https://api.razorpay.com/v1/payment_links', {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${auth}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: finalAmountPaise,
+            currency: 'INR',
+            accept_partial: false,
+            description: `Order #${orderNumber} • Little Colour World Books`,
+            customer: {
+              name: customer.parentName,
+              email: customer.email,
+              contact: customer.phone,
+            },
+            notify: {
+              sms: false,
+              email: false,
+            },
+            reminder_enable: false,
+            notes: {
+              orderId,
+              orderNumber,
+              razorpayOrderId,
+            },
+            callback_url: callbackUrl,
+            callback_method: 'get',
+          }),
+        });
+
+        if (plinkRes.ok) {
+          const plinkData = await plinkRes.json();
+          paymentLinkId = plinkData.id;
+          paymentLinkUrl = plinkData.short_url;
+        }
+      } catch (plinkErr) {
+        console.warn('Payment link creation warning:', plinkErr);
+      }
     }
 
     const orderRecord = {
@@ -212,6 +257,8 @@ app.post('/api/orders/create', async (req, res) => {
       customerPhone: customer.phone,
       totalAmountPaise: finalAmountPaise,
       razorpayOrderId,
+      paymentLinkId,
+      paymentLinkUrl,
       status: 'pending',
       webhookVerified: false,
       downloadToken: '', // STRICT SECURITY: Tokens are strictly issued ONLY after verified payment confirmation!
@@ -229,6 +276,8 @@ app.post('/api/orders/create', async (req, res) => {
         id: orderId,
         orderNumber,
         razorpayOrderId,
+        paymentLinkId,
+        paymentLinkUrl,
         amountPaise: finalAmountPaise,
         currency: 'INR',
         razorpayKeyId: isLiveKey ? razorpayKeyId : '',
@@ -290,14 +339,19 @@ app.post('/api/razorpay/config', (req, res) => {
   });
 });
 
-// API: Check Order Status (authoritative check from server)
-app.get('/api/orders/status/:orderId', (req, res) => {
+// API: Check Order Status (authoritative check from server & Razorpay API)
+app.get('/api/orders/status/:orderId', async (req, res) => {
   const { orderId } = req.params;
   let order = dbOrders.get(orderId);
 
   if (!order) {
     for (const [_, ord] of dbOrders.entries()) {
-      if (ord.orderNumber === orderId || ord.razorpayOrderId === orderId) {
+      if (
+        ord.id === orderId ||
+        ord.orderNumber === orderId ||
+        ord.razorpayOrderId === orderId ||
+        ord.paymentLinkId === orderId
+      ) {
         order = ord;
         break;
       }
@@ -308,7 +362,79 @@ app.get('/api/orders/status/:orderId', (req, res) => {
     return res.status(404).json({ error: 'Order not found on server.' });
   }
 
-  // STRICT SERVER-SIDE CHECK: Order is ONLY paid if verified by Razorpay webhook!
+  const razorpayKeyId = (runtimeRazorpayKeyId || process.env.RAZORPAY_KEY_ID || '').trim();
+  const razorpaySecret = (runtimeRazorpayKeySecret || process.env.RAZORPAY_KEY_SECRET || '').trim();
+
+  // If order is not yet marked paid, verify directly with Razorpay API (handles Webhook latency, Payment Links & mobile UPI redirects)
+  if (order.status !== 'paid' && razorpayKeyId && razorpaySecret && razorpaySecret !== 'YourTestSecretHere') {
+    const auth = Buffer.from(`${razorpayKeyId}:${razorpaySecret}`).toString('base64');
+
+    // 1. Check payments associated with Razorpay Order ID
+    if (order.razorpayOrderId && !order.razorpayOrderId.startsWith('order_test_')) {
+      try {
+        const payRes = await fetch(`https://api.razorpay.com/v1/orders/${order.razorpayOrderId}/payments`, {
+          headers: { Authorization: `Basic ${auth}` },
+        });
+        if (payRes.ok) {
+          const payData = await payRes.json();
+          const capturedPay = payData.items?.find(
+            (p) => p.status === 'captured' || p.status === 'authorized'
+          );
+          if (capturedPay) {
+            order.status = 'paid';
+            order.webhookVerified = true;
+            order.verifiedAt = new Date().toISOString();
+            order.razorpayPaymentId = capturedPay.id;
+            order.downloadToken = order.downloadToken || `tok_whk_${crypto.randomBytes(24).toString('hex')}`;
+            order.tokenExpiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
+            order.updatedAt = new Date().toISOString();
+
+            if (capturedPay.status === 'authorized') {
+              fetch(`https://api.razorpay.com/v1/payments/${capturedPay.id}/capture`, {
+                method: 'POST',
+                headers: {
+                  Authorization: `Basic ${auth}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  amount: order.totalAmountPaise,
+                  currency: 'INR',
+                }),
+              }).catch(() => null);
+            }
+          }
+        }
+      } catch (checkErr) {
+        console.warn('Status order check warning:', checkErr);
+      }
+    }
+
+    // 2. Check status of Razorpay Payment Link
+    if (order.status !== 'paid' && order.paymentLinkId) {
+      try {
+        const plinkCheck = await fetch(`https://api.razorpay.com/v1/payment_links/${order.paymentLinkId}`, {
+          headers: { Authorization: `Basic ${auth}` },
+        });
+        if (plinkCheck.ok) {
+          const plinkData = await plinkCheck.json();
+          if (plinkData.status === 'paid') {
+            order.status = 'paid';
+            order.webhookVerified = true;
+            order.verifiedAt = new Date().toISOString();
+            order.razorpayPaymentId =
+              plinkData.payments?.[0]?.payment_id || `pay_link_${Date.now()}`;
+            order.downloadToken = order.downloadToken || `tok_whk_${crypto.randomBytes(24).toString('hex')}`;
+            order.tokenExpiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
+            order.updatedAt = new Date().toISOString();
+          }
+        }
+      } catch (plinkCheckErr) {
+        console.warn('Status payment link check warning:', plinkCheckErr);
+      }
+    }
+  }
+
+  // STRICT SERVER-SIDE CHECK: Order is ONLY paid if verified by Razorpay!
   const isVerifiedPaid = order.status === 'paid' && order.webhookVerified === true && Boolean(order.razorpayPaymentId);
 
   res.json({
@@ -320,6 +446,7 @@ app.get('/api/orders/status/:orderId', (req, res) => {
     downloadToken: isVerifiedPaid ? order.downloadToken : null,
     razorpayPaymentId: order.razorpayPaymentId,
     expiresAt: order.tokenExpiresAt,
+    paymentLinkUrl: order.paymentLinkUrl,
   });
 });
 

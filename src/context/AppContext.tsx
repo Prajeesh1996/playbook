@@ -19,6 +19,7 @@ interface AppContextType {
   ) => Order | null;
   refundOrder: (orderId: string) => void;
   getOrderByToken: (token: string) => Order | undefined;
+  getOrderById: (orderId: string) => Order | undefined;
   getOrdersByEmail: (email: string) => Order[];
   schoolEnquiries: SchoolEnquiry[];
   submitSchoolEnquiry: (enquiry: Omit<SchoolEnquiry, 'id' | 'status' | 'createdAt'>) => void;
@@ -304,6 +305,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return orders.find((o) => o.downloadToken === token);
   };
 
+  const getOrderById = (orderId: string): Order | undefined => {
+    return orders.find(
+      (o) => o.id === orderId || o.razorpayOrderId === orderId || o.orderNumber === orderId
+    );
+  };
+
   const getOrdersByEmail = (email: string): Order[] => {
     const cleanEmail = email.trim().toLowerCase();
     return orders.filter((o) => o.customer.email.toLowerCase() === cleanEmail && o.status === 'paid');
@@ -371,6 +378,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markOrderPaid,
         refundOrder,
         getOrderByToken,
+        getOrderById,
         getOrdersByEmail,
         schoolEnquiries,
         submitSchoolEnquiry,
