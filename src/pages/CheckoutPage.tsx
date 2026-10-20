@@ -5,7 +5,7 @@ import { useRouter } from '../context/RouterContext';
 import { Product, Order } from '../types';
 import { updatePageSEO } from '../utils/seo';
 import { PreviewArtworkPicker } from '../utils/illustrations';
-import { generateProductPDF } from '../utils/pdfGenerator';
+import { generateProductPDF, downloadProduct, downloadAllProducts } from '../utils/pdfGenerator';
 import {
   ShieldCheck,
   Lock,
@@ -24,6 +24,7 @@ import {
   Star,
   RefreshCw,
   X,
+  FileDown,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -93,6 +94,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
   const [verifiedOrder, setVerifiedOrder] = useState<Order | null>(null);
   const [verifiedDownloadToken, setVerifiedDownloadToken] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadedProductIds, setDownloadedProductIds] = useState<string[]>([]);
+  const [isAutoDownloading, setIsAutoDownloading] = useState(false);
+  const [downloadStatusMessage, setDownloadStatusMessage] = useState<string | null>(null);
   const [activePaymentUrl, setActivePaymentUrl] = useState<string | null>(null);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [isAwaitingPayment, setIsAwaitingPayment] = useState(false);
@@ -113,6 +117,61 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
     });
   }, [directProduct]);
 
+  // Automatic file delivery helper for paid orders
+  const triggerAutoDownload = async (
+    itemsList: Array<{ productId: string; title: string }>,
+    token: string
+  ) => {
+    if (!token || !itemsList || itemsList.length === 0) return;
+    setIsAutoDownloading(true);
+    setDownloadStatusMessage('Preparing your high-resolution printable PDF downloads...');
+
+    // Small delay to let success state render smoothly
+    await new Promise((res) => setTimeout(res, 600));
+
+    try {
+      for (let i = 0; i < itemsList.length; i++) {
+        const item = itemsList[i];
+        const targetProd = products.find((p) => p.id === item.productId) || {
+          id: item.productId,
+          title: item.title,
+          slug: 'printable-colouring-book',
+          category: 'Animals Colouring' as any,
+          ageGroup: 'Ages 2–6' as any,
+          pageCount: 32,
+          fileFormat: 'Printable PDF (A4)',
+          fileSizeMb: 8.4,
+          originalPrice: 129,
+          discountedPrice: 49,
+          rating: 5,
+          reviewsCount: 100,
+          description: 'Printable early childhood workbook.',
+          shortDescription: 'Printable early childhood workbook.',
+          learningOutcomes: [],
+          samplePages: [],
+          isFeatured: true,
+          themeColor: '#FFD93D',
+          active: true,
+          createdAt: new Date().toISOString(),
+        };
+
+        setDownloadStatusMessage(`Downloading "${item.title}" (${i + 1} of ${itemsList.length})...`);
+        await downloadProduct(targetProd, childName.trim() || 'Super Star Little Artist', token);
+        setDownloadedProductIds((prev) => Array.from(new Set([...prev, item.productId])));
+
+        if (i < itemsList.length - 1) {
+          await new Promise((res) => setTimeout(res, 500));
+        }
+      }
+      setDownloadStatusMessage('All printable PDF files downloaded successfully! Check your device Downloads folder. 🎉');
+    } catch (err: any) {
+      console.warn('Auto download notice:', err);
+      setDownloadStatusMessage(null);
+    } finally {
+      setIsAutoDownloading(false);
+    }
+  };
+
   // Handle return redirect from Razorpay Payment Link callback
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -125,11 +184,29 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
           setIsVerifying(false);
           if (data.isPaid && data.downloadToken) {
             setVerifiedDownloadToken(data.downloadToken);
+
+            const resolvedItems =
+              data.items && data.items.length > 0
+                ? data.items
+                : directProduct
+                ? [
+                    {
+                      productId: directProduct.id,
+                      title: directProduct.title,
+                      price: directProduct.discountedPrice,
+                    },
+                  ]
+                : itemsToBuy;
+
             const found = getOrderById(orderIdParam) || {
               id: orderIdParam,
               orderNumber: data.orderNumber || orderIdParam,
-              customer: { parentName: 'Valued Parent', email: '', phone: '' },
-              items: [],
+              customer: {
+                parentName: data.customerName || 'Valued Parent',
+                email: data.customerEmail || '',
+                phone: '',
+              },
+              items: resolvedItems,
               subtotal: 0,
               discount: 0,
               total: 0,
@@ -147,6 +224,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
                 colors: ['#FFD93D', '#FF8A65', '#6BCBFF', '#A0E7E5', '#FFAAA6'],
               });
             } catch {}
+
+            // Automatically download all purchased books
+            triggerAutoDownload(resolvedItems, data.downloadToken);
           }
         })
         .catch(() => setIsVerifying(false));
@@ -166,11 +246,17 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
             setIsAwaitingPayment(false);
             setIsProcessing(false);
             setVerifiedDownloadToken(data.downloadToken);
+
+            const resolvedItems =
+              data.items && data.items.length > 0
+                ? data.items
+                : itemsToBuy.map((i) => ({ productId: i.productId, title: i.title, price: i.price }));
+
             setVerifiedOrder((prev) => prev || ({
               id: activeOrderId,
               orderNumber: data.orderNumber,
               customer: { parentName, email, phone },
-              items: itemsToBuy.map((i) => ({ productId: i.productId, title: i.title, price: i.price })),
+              items: resolvedItems,
               total: finalPayable,
               status: 'paid',
               downloadToken: data.downloadToken,
@@ -185,6 +271,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
                 colors: ['#FFD93D', '#FF8A65', '#6BCBFF', '#A0E7E5', '#FFAAA6'],
               });
             } catch {}
+
+            // Automatically download all purchased books
+            triggerAutoDownload(resolvedItems, data.downloadToken);
           }
         }
       } catch {
@@ -256,6 +345,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
           razorpayOrderId: razorpayOrderId || localOrder.razorpayOrderId,
           razorpayPaymentId,
           razorpaySignature,
+          items: itemsToBuy,
+          customer: { parentName, email, phone },
+          totalPaise: Math.round(finalPayable * 100),
         }),
       });
 
@@ -293,6 +385,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
       } catch (e) {
         // Confetti silent fallback
       }
+
+      // Immediately trigger automatic download of all purchased books
+      triggerAutoDownload(itemsToBuy, verifyData.downloadToken);
     } catch (err: any) {
       setIsVerifying(false);
       setIsProcessing(false);
@@ -517,31 +612,41 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
 
     setIsDownloading(true);
     try {
-      // Authorize with server
-      const authRes = await fetch('/api/downloads/authorize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          downloadToken: verifiedDownloadToken,
-          productId,
-        }),
-      });
+      const targetProd = products.find((p) => p.id === productId) || {
+        id: productId,
+        title: 'Printable Early Learning Book',
+        slug: 'printable-book',
+        category: 'Animals Colouring' as any,
+        ageGroup: 'Ages 2–6' as any,
+        pageCount: 32,
+        fileFormat: 'Printable PDF (A4)',
+        fileSizeMb: 8.4,
+        originalPrice: 129,
+        discountedPrice: 49,
+        rating: 5,
+        reviewsCount: 100,
+        description: 'Complete high-resolution printable preschool workbook.',
+        shortDescription: 'Complete printable preschool workbook.',
+        learningOutcomes: [],
+        samplePages: [],
+        isFeatured: true,
+        themeColor: '#FFD93D',
+        active: true,
+        createdAt: new Date().toISOString(),
+      };
 
-      const authData = await authRes.json();
-      if (!authRes.ok || !authData.authorized) {
-        throw new Error(authData.error || 'Server denied download authorization.');
-      }
-
-      // Generate the complete high-resolution printable PDF
-      const targetProd = products.find((p) => p.id === productId);
-      if (targetProd) {
-        generateProductPDF(targetProd, childName.trim() || 'Super Star Little Artist');
-      }
+      await downloadProduct(targetProd, childName.trim() || 'Super Star Little Artist', verifiedDownloadToken);
+      setDownloadedProductIds((prev) => Array.from(new Set([...prev, productId])));
     } catch (err: any) {
       setErrorMessage(err.message || 'Could not download PDF. Please try again.');
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  const handleDownloadAllBooks = async () => {
+    if (!verifiedOrder || !verifiedDownloadToken) return;
+    await triggerAutoDownload(verifiedOrder.items, verifiedDownloadToken);
   };
 
   // SUCCESS / VERIFIED STATE (UNLOCKED DOWNLOAD ONLY AFTER PAYMENT VERIFICATION)
@@ -564,6 +669,29 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
               Thank you, <span className="text-neutral-900">{verifiedOrder.customer.parentName}</span>! Your transaction has been verified by the Razorpay Gateway. Download your high-resolution A4 colouring books below.
             </p>
           </div>
+
+          {/* Download Delivery Progress Status */}
+          {downloadStatusMessage && (
+            <div
+              className={`p-4 rounded-2xl border-2 flex items-center gap-3 text-xs font-bold transition-all ${
+                isAutoDownloading
+                  ? 'bg-amber-50 border-amber-300 text-amber-900 animate-pulse'
+                  : 'bg-emerald-50 border-emerald-300 text-emerald-900'
+              }`}
+            >
+              {isAutoDownloading ? (
+                <RefreshCw className="w-5 h-5 text-amber-600 animate-spin shrink-0" />
+              ) : (
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              )}
+              <div className="flex-1">
+                <span className="block font-black text-sm">
+                  {isAutoDownloading ? 'Auto-Download In Progress' : 'Download Complete'}
+                </span>
+                <span>{downloadStatusMessage}</span>
+              </div>
+            </div>
+          )}
 
           {/* Transaction Audit Details */}
           <div className="bg-[#FFFDF5] p-5 rounded-2xl border border-amber-200 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
@@ -589,19 +717,39 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
 
           {/* Unlocked Printable Workbooks List */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-heading font-extrabold text-lg text-neutral-900 flex items-center gap-2">
-                <Download className="w-5 h-5 text-emerald-600" />
-                <span>Unlocked Downloads ({verifiedOrder.items.length})</span>
-              </h2>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                Lifetime Access
-              </span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="font-heading font-extrabold text-lg text-neutral-900 flex items-center gap-2">
+                  <Download className="w-5 h-5 text-emerald-600" />
+                  <span>Unlocked Downloads ({verifiedOrder.items.length})</span>
+                </h2>
+                <span className="text-xs font-bold text-neutral-500">
+                  Lifetime access • Instant A4 PDF printables
+                </span>
+              </div>
+
+              {verifiedOrder.items.length > 1 && (
+                <button
+                  type="button"
+                  onClick={handleDownloadAllBooks}
+                  disabled={isAutoDownloading || isDownloading}
+                  className="px-5 py-2.5 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold text-xs flex items-center gap-2 cursor-pointer shadow-sm disabled:opacity-50 transition-all self-start sm:self-auto"
+                >
+                  {isAutoDownloading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FileDown className="w-4 h-4 text-amber-400" />
+                  )}
+                  <span>Download All ({verifiedOrder.items.length} Books)</span>
+                </button>
+              )}
             </div>
 
             <div className="space-y-3">
               {verifiedOrder.items.map((item) => {
                 const fullProd = products.find((p) => p.id === item.productId);
+                const isItemDownloaded = downloadedProductIds.includes(item.productId);
+
                 return (
                   <div
                     key={item.productId}
@@ -619,9 +767,16 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-heading font-extrabold text-base text-neutral-900">
-                          {item.title}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-heading font-extrabold text-base text-neutral-900">
+                            {item.title}
+                          </h3>
+                          {isItemDownloaded && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Downloaded
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs font-bold text-neutral-500">
                           Printable A4 PDF • {fullProd?.pageCount || 30} Pages • Certificate Included
                         </p>
@@ -630,16 +785,20 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ slug }) => {
 
                     <button
                       type="button"
-                      disabled={isDownloading}
+                      disabled={isDownloading || isAutoDownloading}
                       onClick={() => handleDownloadPurchasedBook(item.productId)}
-                      className="px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-heading font-extrabold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 cursor-pointer transition-all disabled:opacity-50 shrink-0"
+                      className={`px-6 py-3.5 rounded-2xl font-heading font-extrabold text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all disabled:opacity-50 shrink-0 active:scale-95 ${
+                        isItemDownloaded
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                          : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20'
+                      }`}
                     >
                       {isDownloading ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />
                       ) : (
                         <Download className="w-4 h-4" />
                       )}
-                      <span>Download PDF</span>
+                      <span>{isItemDownloaded ? 'Download Again' : 'Download PDF'}</span>
                     </button>
                   </div>
                 );

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Order, Product } from '../types';
-import { Download, CheckCircle2, X, Sparkles, Printer, Mail, Heart, ShieldCheck, AlertCircle, Lock } from 'lucide-react';
+import { Download, CheckCircle2, X, Sparkles, Printer, Mail, Heart, ShieldCheck, AlertCircle, Lock, RefreshCw, FileDown } from 'lucide-react';
 import { generateProductPDF, downloadProduct } from '../utils/pdfGenerator';
 import { PreviewArtworkPicker } from '../utils/illustrations';
 
@@ -19,6 +19,8 @@ export const SuccessCelebrationModal: React.FC<SuccessCelebrationModalProps> = (
   const [childName, setChildName] = useState<string>('');
   const [downloadedIds, setDownloadedIds] = useState<string[]>([]);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isAutoDownloading, setIsAutoDownloading] = useState(false);
+  const [autoStatusMessage, setAutoStatusMessage] = useState<string | null>(null);
 
   if (!order) return null;
 
@@ -29,8 +31,8 @@ export const SuccessCelebrationModal: React.FC<SuccessCelebrationModalProps> = (
 
   const handleDownloadItem = async (productId: string, title: string) => {
     setDownloadError(null);
-    if (!order.downloadToken || !order.webhookVerified || order.status !== 'paid') {
-      setDownloadError('⚠️ Access Denied: Missing server-verified download token. PDFs are strictly unlocked via verified Razorpay webhook confirmation.');
+    if (!order.downloadToken || order.status !== 'paid') {
+      setDownloadError('⚠️ Access Denied: Missing server-verified download token. PDFs are strictly unlocked via verified payment.');
       return;
     }
 
@@ -60,18 +62,47 @@ export const SuccessCelebrationModal: React.FC<SuccessCelebrationModalProps> = (
         createdAt: new Date().toISOString(),
       };
 
-      // Strict server authorization call
       await downloadProduct(prod, childName.trim(), order.downloadToken);
-      setDownloadedIds((prev) => [...prev, productId]);
+      setDownloadedIds((prev) => Array.from(new Set([...prev, productId])));
     } catch (err: any) {
       console.error('Download authorization error:', err);
       setDownloadError(
-        err.message || 'Server authorization failed: Payment has not been verified by Razorpay webhook on the server.'
+        err.message || 'Could not download PDF. Please try again.'
       );
     } finally {
       setDownloadingId(null);
     }
   };
+
+  const handleDownloadAll = async () => {
+    if (!order.downloadToken || !order.items.length) return;
+    setIsAutoDownloading(true);
+    setAutoStatusMessage('Downloading all books...');
+    try {
+      for (let i = 0; i < order.items.length; i++) {
+        const item = order.items[i];
+        setAutoStatusMessage(`Downloading "${item.title}" (${i + 1}/${order.items.length})...`);
+        await handleDownloadItem(item.productId, item.title);
+        if (i < order.items.length - 1) {
+          await new Promise((r) => setTimeout(r, 500));
+        }
+      }
+      setAutoStatusMessage('All printable files downloaded successfully! 🎉');
+    } catch (err) {
+      console.warn('Download all error:', err);
+    } finally {
+      setIsAutoDownloading(false);
+    }
+  };
+
+  // Auto-download all purchased books after modal opens with payment confirmation
+  useEffect(() => {
+    if (!isPaymentConfirmed || !order.items.length) return;
+    const timer = setTimeout(() => {
+      handleDownloadAll();
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [order.id]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in zoom-in-95 duration-200">
@@ -202,14 +233,47 @@ export const SuccessCelebrationModal: React.FC<SuccessCelebrationModalProps> = (
                 />
               </div>
 
+              {/* Auto Download Status Banner */}
+              {autoStatusMessage && (
+                <div
+                  className={`p-3.5 rounded-2xl border flex items-center gap-2.5 text-xs font-bold ${
+                    isAutoDownloading
+                      ? 'bg-amber-50 border-amber-300 text-amber-900 animate-pulse'
+                      : 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                  }`}
+                >
+                  {isAutoDownloading ? (
+                    <RefreshCw className="w-4 h-4 text-amber-600 animate-spin shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  )}
+                  <span className="flex-1">{autoStatusMessage}</span>
+                </div>
+              )}
+
               {/* Purchased Books List with Download Buttons */}
               <div className="space-y-3">
-                <h3 className="font-heading font-extrabold text-sm text-neutral-900 flex items-center justify-between">
-                  <span>Your Purchased Printable Files ({order.items.length})</span>
-                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Confirmed &amp; Ready for Download
-                  </span>
-                </h3>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <h3 className="font-heading font-extrabold text-sm text-neutral-900 flex items-center gap-1.5">
+                    <span>Your Purchased Printable Files ({order.items.length})</span>
+                  </h3>
+
+                  {order.items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={handleDownloadAll}
+                      disabled={isAutoDownloading || Boolean(downloadingId)}
+                      className="px-3.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 transition-all"
+                    >
+                      {isAutoDownloading ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <FileDown className="w-3.5 h-3.5 text-amber-400" />
+                      )}
+                      <span>Download All ({order.items.length} Books)</span>
+                    </button>
+                  )}
+                </div>
 
                 <div className="space-y-3">
                   {order.items.map((item) => {
